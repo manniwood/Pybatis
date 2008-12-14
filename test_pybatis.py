@@ -19,7 +19,7 @@ form_values = {'USERNAME': 'mwood%'}
 #form_values = {'ID': '0'}
 
 #rows = sqlMap.select_list_of_dicts('users/select.pgsql', form_values)
-rows = ()
+rows = None
 try:
     sqlMap.begin()
     rows = sqlMap.select('users/select.pgsql', form_values)

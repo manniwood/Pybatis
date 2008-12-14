@@ -70,7 +70,7 @@ class SQLMap(object):
             return curs.fetchall()
 
     def simple_select(self, template_pathname, map):
-        rows = ()
+        rows = None
         try:
             self.begin()
             rows = self.select(template_pathname, map)
@@ -83,6 +83,7 @@ class SQLMap(object):
         finally:
             print 'Ending.'
             self.end()
+        return rows
 
 
     # TODO: select_dict
