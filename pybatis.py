@@ -77,9 +77,10 @@ class SQLMap(object):
             self.commit()
         except:
             print 'Exception.'
-            print sys.exc_info()
+            #print sys.exc_info()
             self.rollback()
             # XXX: do some sort of throw here
+            raise
         finally:
             print 'Ending.'
             self.end()

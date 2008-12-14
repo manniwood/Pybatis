@@ -26,8 +26,8 @@ try:
     sqlMap.commit()
 except:
     print 'Exception.'
-    print sys.exc_info()
     sqlMap.rollback()
+    raise
 finally:
     print 'Ending.'
     sqlMap.end()
