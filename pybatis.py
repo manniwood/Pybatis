@@ -24,11 +24,12 @@ def is_not_empty(str):
 
 
 class SQLMap(object):
-    def __init__(self, conn, template_path):
+    def __init__(self, conn, template_path, default_isolation_level=ISOLATION_LEVEL_READ_COMMITTED):
         self.conn = conn
         self.jinja2env = Environment(trim_blocks = True, loader = FileSystemLoader(template_path))
         self.jinja2env.tests['present'] = is_present
         self.jinja2env.tests['not_empty'] = is_not_empty
+        self.default_isolation_level = default_isolation_level
 
 
     def select_list_of_dicts(self, template_pathname, map):
@@ -37,7 +38,7 @@ class SQLMap(object):
         sql = template.render(map)
         curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         try:
-            conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+            conn.set_isolation_level(self.default_isolation_level)
             curs.execute(sql, map);
             if curs.rowcount < 1:
                 return None
