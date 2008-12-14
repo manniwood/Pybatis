@@ -30,25 +30,60 @@ class SQLMap(object):
         self.jinja2env.tests['present'] = is_present
         self.jinja2env.tests['not_empty'] = is_not_empty
         self.default_isolation_level = default_isolation_level
+        self.transaction_active = False
 
-
-    def select_list_of_dicts(self, template_pathname, map):
+    def begin(self, isolation_level=None):
+        # XXX: you could arguably check to see if transaction is active first
+        # XXX: you could arguably check to see if cursor is still open
         conn = self.conn
+        self.transaction_active = True
+        if isolation_level == None:
+            self.isolation_level = self.default_isolation_level
+        else:
+            self.isolation_level = isolation_level
+        self.curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        conn.set_isolation_level(self.default_isolation_level)
+
+
+    def commit(self, isolation_level=None):
+        # XXX: you could arguably check to see if transaction is active first
+        self.conn.commit()
+        self.transaction_active = False
+
+
+    def rollback(self, isolation_level=None):
+        # XXX: you could arguably check to see if transaction is active first
+        self.conn.rollback()
+        self.transaction_active = False
+
+    def end(self):
+        self.curs.close()
+
+    def select(self, template_pathname, map=None):
+        curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
-        curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        curs.execute(sql, map);
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchall()
+
+    def simple_select(self, template_pathname, map):
+        rows = ()
         try:
-            conn.set_isolation_level(self.default_isolation_level)
-            curs.execute(sql, map);
-            if curs.rowcount < 1:
-                return None
-            else:
-                return curs.fetchall()
-            conn.commit()
+            self.begin()
+            rows = self.select(template_pathname, map)
+            self.commit()
         except:
-            conn.rollback()
+            print 'Exception.'
+            print sys.exc_info()
+            self.rollback()
+            # XXX: do some sort of throw here
         finally:
-            curs.close()  # our responsibility to close, including on exceptions
+            print 'Ending.'
+            self.end()
+
 
     # TODO: select_dict
     # TODO: select_item

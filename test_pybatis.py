@@ -5,6 +5,7 @@
 import psycopg2
 import psycopg2.extras
 import pybatis
+import sys
 
 # at app startup
 conn = psycopg2.connect('user=mattertrack dbname=mattertrack')  # conn will never get opened by actual implementation
@@ -17,12 +18,32 @@ form_values = {'USERNAME': 'mwood%'}
 #form_values = {'USERNAME': 'notthere'}
 #form_values = {'ID': '0'}
 
-rows = sqlMap.select_list_of_dicts('users/select.pgsql', form_values)
+#rows = sqlMap.select_list_of_dicts('users/select.pgsql', form_values)
+rows = ()
+try:
+    sqlMap.begin()
+    rows = sqlMap.select('users/select.pgsql', form_values)
+    sqlMap.commit()
+except:
+    print 'Exception.'
+    print sys.exc_info()
+    sqlMap.rollback()
+finally:
+    print 'Ending.'
+    sqlMap.end()
 
 if rows == None:
     print 'Nothing found.'
 else:
     for row in rows:
+        print "username: ", row['USERNAME'], " password: ", row['PASSWORD']
+
+more_rows = sqlMap.simple_select('users/select.pgsql', form_values)
+
+if more_rows == None:
+    print 'Nothing found.'
+else:
+    for row in more_rows:
         print "username: ", row['USERNAME'], " password: ", row['PASSWORD']
 
 
