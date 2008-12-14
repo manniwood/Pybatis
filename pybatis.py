@@ -1,5 +1,12 @@
 import psycopg2
 import psycopg2.extras
+from psycopg2.extensions import (
+    ISOLATION_LEVEL_AUTOCOMMIT,
+    ISOLATION_LEVEL_READ_COMMITTED,
+    ISOLATION_LEVEL_SERIALIZABLE,
+    STATUS_BEGIN,
+    STATUS_READY)
+
 
 from jinja2 import Environment, FileSystemLoader
 from jinja2.runtime import Undefined
@@ -25,17 +32,22 @@ class SQLMap(object):
 
 
     def select_list_of_dicts(self, template_pathname, map):
+        conn = self.conn
         template = self.jinja2env.get_template(template_pathname)
-        # TODO: throw something if not resolvable to file name
-        # TODO: throw something if map is empty or None
         sql = template.render(map)
-        curs = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        curs.execute(sql, map);
-        if curs.rowcount < 1:
-            return None
-        else:
-            return curs.fetchall()
-        curs.close()  # our responsibility to close, including on exceptions
+        curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+            curs.execute(sql, map);
+            if curs.rowcount < 1:
+                return None
+            else:
+                return curs.fetchall()
+            conn.commit()
+        except:
+            conn.rollback()
+        finally:
+            curs.close()  # our responsibility to close, including on exceptions
 
     # TODO: select_dict
     # TODO: select_item
