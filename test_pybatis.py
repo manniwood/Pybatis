@@ -50,6 +50,22 @@ else:
         print "username: ", row['USERNAME'], " password: ", row['PASSWORD']
 
 
+first_row = sqlMap.simple_select_first_row('users/select.pgsql', form_values)
+
+if first_row == None:
+    print 'Nothing found.'
+else:
+    print "username: ", first_row['USERNAME'], " password: ", first_row['PASSWORD']
+
+
+first_item = sqlMap.simple_select_first_col_of_first_row('users/select.pgsql', form_values)
+
+if first_item == None:
+    print 'Nothing found.'
+else:
+    print "username: ", first_item
+
+
 # at app shutdown
 conn.close()  # conn will never close in actual implementation
 

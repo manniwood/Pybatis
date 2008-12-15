@@ -73,6 +73,19 @@ class SQLMap(object):
         else:
             return curs.fetchall()
 
+    def simple_select(self, template_pathname, map=None):
+        rows = None
+        try:
+            self.begin()
+            rows = self.select(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return rows
+
     def select_first_row(self, template_pathname, map=None):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
@@ -83,6 +96,19 @@ class SQLMap(object):
         else:
             return curs.fetchone()
 
+    def simple_select_first_row(self, template_pathname, map=None):
+        first_row = None
+        try:
+            self.begin()
+            first_row = self.select_first_row(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return first_row
+
     def select_first_col_of_first_row(self, template_pathname, map=None):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
@@ -92,6 +118,19 @@ class SQLMap(object):
             return None
         else:
             return curs.fetchone()[0]
+
+    def simple_select_first_col_of_first_row(self, template_pathname, map=None):
+        item = None
+        try:
+            self.begin()
+            item = self.select_first_col_of_first_row(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return item
 
     def insert(self, template_pathname, map=None):
         curs = self.curs
@@ -106,22 +145,6 @@ class SQLMap(object):
         sql = template.render(map)
         curs.execute(sql, map);
         return curs.statusmessage
-
-
-    def simple_select(self, template_pathname, map):
-        rows = None
-        try:
-            self.begin()
-            rows = self.select(template_pathname, map)
-            self.commit()
-        except:
-            print 'Exception.'
-            self.rollback()
-            raise
-        finally:
-            print 'Ending.'
-            self.end()
-        return rows
 
 
 
