@@ -11,6 +11,8 @@ from psycopg2.extensions import (
 from jinja2 import Environment, FileSystemLoader
 from jinja2.runtime import Undefined
 
+import logging
+
 # custom Jinja tests
 
 # detect dict val not being present
@@ -64,7 +66,8 @@ class SQLMap(object):
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
-        print 'Just executed ', curs.query
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         if curs.rowcount < 1:
             return None
         else:

@@ -6,6 +6,9 @@ import psycopg2
 import psycopg2.extras
 import pybatis
 import sys
+import logging
+
+logging.getLogger().setLevel(logging.CRITICAL)
 
 # at app startup
 conn = psycopg2.connect('user=mattertrack dbname=mattertrack')  # conn will never get opened by actual implementation
