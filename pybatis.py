@@ -64,10 +64,46 @@ class SQLMap(object):
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
+        print 'Just executed ', curs.query
         if curs.rowcount < 1:
             return None
         else:
             return curs.fetchall()
+
+    def select_first_row(self, template_pathname, map=None):
+        curs = self.curs
+        template = self.jinja2env.get_template(template_pathname)
+        sql = template.render(map)
+        curs.execute(sql, map);
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchone()
+
+    def select_first_col_of_first_row(self, template_pathname, map=None):
+        curs = self.curs
+        template = self.jinja2env.get_template(template_pathname)
+        sql = template.render(map)
+        curs.execute(sql, map);
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchone()[0]
+
+    def insert(self, template_pathname, map=None):
+        curs = self.curs
+        template = self.jinja2env.get_template(template_pathname)
+        sql = template.render(map)
+        curs.execute(sql, map);
+        return curs.statusmessage
+
+    def update(self, template_pathname, map=None):
+        curs = self.curs
+        template = self.jinja2env.get_template(template_pathname)
+        sql = template.render(map)
+        curs.execute(sql, map);
+        return curs.statusmessage
+
 
     def simple_select(self, template_pathname, map):
         rows = None
@@ -77,9 +113,7 @@ class SQLMap(object):
             self.commit()
         except:
             print 'Exception.'
-            #print sys.exc_info()
             self.rollback()
-            # XXX: do some sort of throw here
             raise
         finally:
             print 'Ending.'
@@ -87,11 +121,4 @@ class SQLMap(object):
         return rows
 
 
-    # TODO: select_dict
-    # TODO: select_item
-    # TODO: insert
-    # TODO: update
-    # TODO: select_list_of_dicts, no map
-    # TODO: select_dict, no map
-    # TODO: select_item, no map
 
