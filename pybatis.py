@@ -23,7 +23,17 @@ def is_present(str):
 def is_not_empty(str):
     return (not isinstance(str, Undefined)) and str != None and str != ''
 
+class NullConnectionException(Exception):
+    pass
 
+class ConnectionClosedException(Exception):
+    pass
+
+class CursorAlreadyExistsException(Exception):
+    pass
+
+class CursorAlreadyOpenException(Exception):
+    pass
 
 class SQLMap(object):
     def __init__(self, conn, template_path, default_isolation_level=ISOLATION_LEVEL_READ_COMMITTED):
@@ -32,13 +42,19 @@ class SQLMap(object):
         self.jinja2env.tests['present'] = is_present
         self.jinja2env.tests['not_empty'] = is_not_empty
         self.default_isolation_level = default_isolation_level
-        self.transaction_active = False
+        self.curs = None
 
     def begin(self, isolation_level=None):
-        # XXX: you could arguably check to see if transaction is active first
-        # XXX: you could arguably check to see if cursor is still open
         conn = self.conn
-        self.transaction_active = True
+        if conn == None:
+            raise NullConnectionExcepton
+
+        if conn.closed == True:
+            raise ConnectionClosedException
+
+        if self.curs != None:
+            raise CursorAlreadyExistsException
+
         if isolation_level == None:
             self.isolation_level = self.default_isolation_level
         else:
@@ -48,18 +64,15 @@ class SQLMap(object):
 
 
     def commit(self, isolation_level=None):
-        # XXX: you could arguably check to see if transaction is active first
         self.conn.commit()
-        self.transaction_active = False
 
 
     def rollback(self, isolation_level=None):
-        # XXX: you could arguably check to see if transaction is active first
         self.conn.rollback()
-        self.transaction_active = False
 
     def end(self):
         self.curs.close()
+        self.curs = None
 
     def select(self, template_pathname, map=None):
         curs = self.curs
