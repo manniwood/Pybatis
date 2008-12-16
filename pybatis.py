@@ -13,7 +13,7 @@ from jinja2.runtime import Undefined
 
 import logging
 
-# custom Jinja tests
+########### custom Jinja tests needed by pybatis
 
 # detect dict val not being present
 def is_present(str):
@@ -22,6 +22,8 @@ def is_present(str):
 # detect dict val not being present or being present but empty string
 def is_not_empty(str):
     return (not isinstance(str, Undefined)) and str != None and str != ''
+
+########## custom exceptions
 
 class NullConnectionException(Exception):
     pass
@@ -86,11 +88,34 @@ class SQLMap(object):
         else:
             return curs.fetchall()
 
+    def direct_select(self, sql, map=None):
+        curs = self.curs
+        curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchall()
+
     def simple_select(self, template_pathname, map=None):
         rows = None
         try:
             self.begin()
             rows = self.select(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return rows
+
+    def simple_direct_select(self, sql, map=None):
+        rows = None
+        try:
+            self.begin()
+            rows = self.direct_select(sql, map)
             self.commit()
         except:
             self.rollback()
