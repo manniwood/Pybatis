@@ -134,6 +134,14 @@ class SQLMap(object):
         else:
             return curs.fetchone()
 
+    def direct_select_first_row(self, sql, map=None):
+        curs = self.curs
+        curs.execute(sql, map);
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchone()
+
     def simple_select_first_row(self, template_pathname, map=None):
         first_row = None
         try:
@@ -147,7 +155,20 @@ class SQLMap(object):
             self.end()
         return first_row
 
-    def select_first_col_of_first_row(self, template_pathname, map=None):
+    def simple_direct_select_first_row(self, template_pathname, map=None):
+        first_row = None
+        try:
+            self.begin()
+            first_row = self.direct_select_first_row(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return first_row
+
+    def select_first_datum(self, template_pathname, map=None):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
@@ -157,11 +178,32 @@ class SQLMap(object):
         else:
             return curs.fetchone()[0]
 
-    def simple_select_first_col_of_first_row(self, template_pathname, map=None):
+    def direct_select_first_datum(self, sql, map=None):
+        curs = self.curs
+        curs.execute(sql, map);
+        if curs.rowcount < 1:
+            return None
+        else:
+            return curs.fetchone()[0]
+
+    def simple_select_first_datum(self, template_pathname, map=None):
         item = None
         try:
             self.begin()
-            item = self.select_first_col_of_first_row(template_pathname, map)
+            item = self.select_first_datum(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return item
+
+    def simple_direct_select_first_datum(self, template_pathname, map=None):
+        item = None
+        try:
+            self.begin()
+            item = self.direct_select_first_datum(template_pathname, map)
             self.commit()
         except:
             self.rollback()
