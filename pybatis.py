@@ -129,6 +129,8 @@ class SQLMap(object):
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         if curs.rowcount < 1:
             return None
         else:
@@ -137,10 +139,19 @@ class SQLMap(object):
     def direct_select_first_row(self, sql, map=None):
         curs = self.curs
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         if curs.rowcount < 1:
             return None
         else:
-            return curs.fetchone()
+            #return curs.fetchone()
+            real_dict = {}
+            dict_row = curs.fetchone()
+            # real_dict = curs.fetchone().copy()
+            logging.debug('########## keys: ' + str(dict_row.keys()))
+            for key in dict_row.keys(): # XXX: turn this into utility function
+                real_dict[key] = dict_row[key]
+            return real_dict
 
     def simple_select_first_row(self, template_pathname, map=None):
         first_row = None
@@ -173,6 +184,8 @@ class SQLMap(object):
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         if curs.rowcount < 1:
             return None
         else:
@@ -181,6 +194,8 @@ class SQLMap(object):
     def direct_select_first_datum(self, sql, map=None):
         curs = self.curs
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         if curs.rowcount < 1:
             return None
         else:
@@ -217,14 +232,84 @@ class SQLMap(object):
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         return curs.statusmessage
+
+    def direct_insert(self, sql, map=None):
+        curs = self.curs
+        curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
+        return curs.statusmessage
+
+    def simple_insert(self, template_pathname, map=None):
+        status_message = None
+        try:
+            self.begin()
+            status_message = self.insert(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return status_message
+
+    def simple_direct_insert(self, sql, map=None):
+        status_message = None
+        try:
+            self.begin()
+            status_message = self.direct_insert(sql, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return status_message
+
 
     def update(self, template_pathname, map=None):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
         curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
         return curs.statusmessage
 
+    def direct_update(self, sql, map=None):
+        curs = self.curs
+        curs.execute(sql, map);
+        logging.debug('Just executed')
+        logging.debug(curs.query)
+        return curs.statusmessage
+
+    def simple_update(self, template_pathname, map=None):
+        status_message = None
+        try:
+            self.begin()
+            status_message = self.update(template_pathname, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return status_message
+
+    def simple_direct_update(self, sql, map=None):
+        status_message = None
+        try:
+            self.begin()
+            status_message = self.direct_update(sql, map)
+            self.commit()
+        except:
+            self.rollback()
+            raise
+        finally:
+            self.end()
+        return status_message
 
 
