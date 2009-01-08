@@ -37,6 +37,32 @@ class CursorAlreadyExistsException(Exception):
 class CursorAlreadyOpenException(Exception):
     pass
 
+########## utility functions
+
+def row_to_dict (row, keys=None):
+    if row == None:
+        return None
+    if keys == None:
+        keys = row.keys()
+    dict = {}
+    for key in keys:
+        dict[key] = row[key]
+    return dict
+
+def rows_to_dicts (rows, keys=None):
+    if rows == None:
+        return None
+    if len(rows) < 1:
+        return None
+    if keys == None:
+        keys = row[0].keys()
+    list = ()
+    for row in rows:
+        list.push(row_to_dict(row, keys))
+    return list
+
+########## sql map
+
 class SQLMap(object):
     def __init__(self, conn, template_path, default_isolation_level=ISOLATION_LEVEL_READ_COMMITTED):
         self.conn = conn
@@ -86,7 +112,7 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return curs.fetchall()
+            return rows_2_dicts(curs.fetchall())
 
     def direct_select(self, sql, map=None):
         curs = self.curs
@@ -96,33 +122,33 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return curs.fetchall()
+            return rows_2_dicts(curs.fetchall())
 
     def simple_select(self, template_pathname, map=None):
-        rows = None
+        list_of_dicts = None
         try:
             self.begin()
-            rows = self.select(template_pathname, map)
+            list_of_dicts = self.select(template_pathname, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return rows
+        return list_of_dicts
 
     def simple_direct_select(self, sql, map=None):
-        rows = None
+        list_of_dicts = None
         try:
             self.begin()
-            rows = self.direct_select(sql, map)
+            list_of_dicts = self.direct_select(sql, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return rows
+        return list_of_dicts
 
     def select_first_row(self, template_pathname, map=None):
         curs = self.curs
@@ -134,7 +160,7 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return curs.fetchone()
+            return row_to_dict(curs.fetchone())
 
     def direct_select_first_row(self, sql, map=None):
         curs = self.curs
@@ -144,40 +170,33 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            #return curs.fetchone()
-            real_dict = {}
-            dict_row = curs.fetchone()
-            # real_dict = curs.fetchone().copy()
-            logging.debug('########## keys: ' + str(dict_row.keys()))
-            for key in dict_row.keys(): # XXX: turn this into utility function
-                real_dict[key] = dict_row[key]
-            return real_dict
+            return row_to_dict(curs.fetchone())
 
     def simple_select_first_row(self, template_pathname, map=None):
-        first_row = None
+        first_row_dict = None
         try:
             self.begin()
-            first_row = self.select_first_row(template_pathname, map)
+            first_row_dict = self.select_first_row(template_pathname, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return first_row
+        return first_row_dict
 
     def simple_direct_select_first_row(self, template_pathname, map=None):
-        first_row = None
+        first_row_dict = None
         try:
             self.begin()
-            first_row = self.direct_select_first_row(template_pathname, map)
+            first_row_dict = self.direct_select_first_row(template_pathname, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return first_row
+        return first_row_dict
 
     def select_first_datum(self, template_pathname, map=None):
         curs = self.curs
@@ -202,30 +221,30 @@ class SQLMap(object):
             return curs.fetchone()[0]
 
     def simple_select_first_datum(self, template_pathname, map=None):
-        item = None
+        first_datum = None
         try:
             self.begin()
-            item = self.select_first_datum(template_pathname, map)
+            first_datum = self.select_first_datum(template_pathname, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return item
+        return first_datum
 
     def simple_direct_select_first_datum(self, template_pathname, map=None):
-        item = None
+        first_datum = None
         try:
             self.begin()
-            item = self.direct_select_first_datum(template_pathname, map)
+            first_datum = self.direct_select_first_datum(template_pathname, map)
             self.commit()
         except:
             self.rollback()
             raise
         finally:
             self.end()
-        return item
+        return first_datum
 
     def insert(self, template_pathname, map=None):
         curs = self.curs
