@@ -55,10 +55,10 @@ def rows_to_dicts (rows, keys=None):
     if len(rows) < 1:
         return None
     if keys == None:
-        keys = row[0].keys()
-    list = ()
+        keys = rows[0].keys()
+    list = []
     for row in rows:
-        list.push(row_to_dict(row, keys))
+        list.append(row_to_dict(row, keys))
     return list
 
 ########## sql map
@@ -112,7 +112,7 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return rows_2_dicts(curs.fetchall())
+            return rows_to_dicts(curs.fetchall())
 
     def direct_select(self, sql, map=None):
         curs = self.curs
@@ -122,7 +122,7 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return rows_2_dicts(curs.fetchall())
+            return rows_to_dicts(curs.fetchall())
 
     def simple_select(self, template_pathname, map=None):
         list_of_dicts = None
