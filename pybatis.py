@@ -124,22 +124,6 @@ class SQLMap(object):
         else:
             return rows_to_dicts(curs.fetchall())
 
-    def rh_direct_select(self, sql, row_handler, map=None):
-        curs = self.curs
-        curs.execute(sql, map);
-        logging.debug('Just executed')
-        logging.debug(curs.query)
-        if curs.rowcount < 1:
-            return None
-        else:
-            rows = curs.fetchall()
-            if len(rows) < 1:
-                return None
-            list = []
-            for row in rows:
-                row_handler.handle_row(row)
-            return list
-
     def simple_select(self, template_pathname, map=None):
         list_of_dicts = None
         try:
