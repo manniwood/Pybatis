@@ -102,7 +102,7 @@ class SQLMap(object):
         self.curs.close()
         self.curs = None
 
-    def select(self, template_pathname, map=None):
+    def select(self, template_pathname, map=None, transformer=rows_to_dicts):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
@@ -112,9 +112,9 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return rows_to_dicts(curs.fetchall())
+            return transformer(curs.fetchall())
 
-    def direct_select(self, sql, map=None):
+    def direct_select(self, sql, map=None, transformer=rows_to_dicts):
         curs = self.curs
         curs.execute(sql, map);
         logging.debug('Just executed')
@@ -122,13 +122,13 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            return rows_to_dicts(curs.fetchall())
+            return transformer(curs.fetchall())
 
-    def simple_select(self, template_pathname, map=None):
+    def simple_select(self, template_pathname, map=None, transformer=rows_to_dicts):
         list_of_dicts = None
         try:
             self.begin()
-            list_of_dicts = self.select(template_pathname, map)
+            list_of_dicts = self.select(template_pathname, map, transformer)
             self.commit()
         except:
             self.rollback()
@@ -137,11 +137,11 @@ class SQLMap(object):
             self.end()
         return list_of_dicts
 
-    def simple_direct_select(self, sql, map=None):
+    def simple_direct_select(self, sql, map=None, transformer=rows_to_dicts):
         list_of_dicts = None
         try:
             self.begin()
-            list_of_dicts = self.direct_select(sql, map)
+            list_of_dicts = self.direct_select(sql, map, transformer)
             self.commit()
         except:
             self.rollback()
