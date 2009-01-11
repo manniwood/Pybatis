@@ -13,6 +13,8 @@ from jinja2.runtime import Undefined
 
 import logging
 
+import time
+
 ########### custom Jinja tests needed by pybatis
 
 # detect dict val not being present
@@ -61,6 +63,14 @@ def rows_to_dicts (rows, keys=None):
         list.append(row_to_dict(row, keys))
     return list
 
+def start_time_if_debug():
+    if (logging.getLogger().getEffectiveLevel() == logging.DEBUG):
+        return time.clock()
+
+def elpsed_time_if_debug(the_time):
+    if (logging.getLogger().getEffectiveLevel() == logging.DEBUG):
+        return time.clock() - the_time
+
 ########## sql map
 
 class SQLMap(object):
@@ -106,9 +116,13 @@ class SQLMap(object):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -116,9 +130,13 @@ class SQLMap(object):
 
     def direct_select(self, sql, map=None, transformer=rows_to_dicts):
         curs = self.curs
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -154,9 +172,13 @@ class SQLMap(object):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -164,9 +186,13 @@ class SQLMap(object):
 
     def direct_select_first_row(self, sql, map=None):
         curs = self.curs
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -202,9 +228,13 @@ class SQLMap(object):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -212,9 +242,13 @@ class SQLMap(object):
 
     def direct_select_first_datum(self, sql, map=None):
         curs = self.curs
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
         else:
@@ -250,16 +284,24 @@ class SQLMap(object):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
     def direct_insert(self, sql, map=None):
         curs = self.curs
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
     def simple_insert(self, template_pathname, map=None):
@@ -293,16 +335,24 @@ class SQLMap(object):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
     def direct_update(self, sql, map=None):
         curs = self.curs
+        the_time = -1  # an impossible amount of time indicates time not taken
+        the_time = start_time_if_debug()
         curs.execute(sql, map);
+        the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
         logging.debug(curs.query)
+        logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
     def simple_update(self, template_pathname, map=None):
