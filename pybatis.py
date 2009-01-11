@@ -280,7 +280,7 @@ class SQLMap(object):
             self.end()
         return first_datum
 
-    def insert(self, template_pathname, map=None):
+    def execute(self, template_pathname, map=None):
         curs = self.curs
         template = self.jinja2env.get_template(template_pathname)
         sql = template.render(map)
@@ -293,7 +293,7 @@ class SQLMap(object):
         logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
-    def direct_insert(self, sql, map=None):
+    def direct_execute(self, sql, map=None):
         curs = self.curs
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
@@ -304,11 +304,11 @@ class SQLMap(object):
         logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
-    def simple_insert(self, template_pathname, map=None):
+    def simple_execute(self, template_pathname, map=None):
         status_message = None
         try:
             self.begin()
-            status_message = self.insert(template_pathname, map)
+            status_message = self.execute(template_pathname, map)
             self.commit()
         except:
             self.rollback()
@@ -317,62 +317,11 @@ class SQLMap(object):
             self.end()
         return status_message
 
-    def simple_direct_insert(self, sql, map=None):
+    def simple_direct_execute(self, sql, map=None):
         status_message = None
         try:
             self.begin()
-            status_message = self.direct_insert(sql, map)
-            self.commit()
-        except:
-            self.rollback()
-            raise
-        finally:
-            self.end()
-        return status_message
-
-
-    def update(self, template_pathname, map=None):
-        curs = self.curs
-        template = self.jinja2env.get_template(template_pathname)
-        sql = template.render(map)
-        the_time = -1  # an impossible amount of time indicates time not taken
-        the_time = start_time_if_debug()
-        curs.execute(sql, map);
-        the_time = elpsed_time_if_debug(the_time)
-        logging.debug('Just executed')
-        logging.debug(curs.query)
-        logging.debug('time: ' + str(the_time))
-        return curs.statusmessage
-
-    def direct_update(self, sql, map=None):
-        curs = self.curs
-        the_time = -1  # an impossible amount of time indicates time not taken
-        the_time = start_time_if_debug()
-        curs.execute(sql, map);
-        the_time = elpsed_time_if_debug(the_time)
-        logging.debug('Just executed')
-        logging.debug(curs.query)
-        logging.debug('time: ' + str(the_time))
-        return curs.statusmessage
-
-    def simple_update(self, template_pathname, map=None):
-        status_message = None
-        try:
-            self.begin()
-            status_message = self.update(template_pathname, map)
-            self.commit()
-        except:
-            self.rollback()
-            raise
-        finally:
-            self.end()
-        return status_message
-
-    def simple_direct_update(self, sql, map=None):
-        status_message = None
-        try:
-            self.begin()
-            status_message = self.direct_update(sql, map)
+            status_message = self.direct_execute(sql, map)
             self.commit()
         except:
             self.rollback()
