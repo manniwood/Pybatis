@@ -81,6 +81,7 @@ class SQLMap(object):
         self.jinja2env.tests['not_empty'] = is_not_empty
         self.default_isolation_level = default_isolation_level
         self.curs = None
+        self.template_path = template_path
 
     def begin(self, isolation_level=None):
         conn = self.conn
@@ -114,8 +115,12 @@ class SQLMap(object):
 
     def select(self, template_pathname, map=None, transformer=rows_to_dicts):
         curs = self.curs
-        template = self.jinja2env.get_template(template_pathname)
-        sql = template.render(map)
+        sql = ''
+        if map == None:   # if no map, no need to render template; just use directly
+            sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, template_pathname)
+        else:
+            template = self.jinja2env.get_template(template_pathname)
+            sql = template.render(map)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
         curs.execute(sql, map);
@@ -170,8 +175,12 @@ class SQLMap(object):
 
     def select_first_row(self, template_pathname, map=None):
         curs = self.curs
-        template = self.jinja2env.get_template(template_pathname)
-        sql = template.render(map)
+        sql = ''
+        if map == None:   # if no map, no need to render template; just use directly
+            sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, template_pathname)
+        else:
+            template = self.jinja2env.get_template(template_pathname)
+            sql = template.render(map)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
         curs.execute(sql, map);
@@ -226,8 +235,12 @@ class SQLMap(object):
 
     def select_first_datum(self, template_pathname, map=None):
         curs = self.curs
-        template = self.jinja2env.get_template(template_pathname)
-        sql = template.render(map)
+        sql = ''
+        if map == None:   # if no map, no need to render template; just use directly
+            sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, template_pathname)
+        else:
+            template = self.jinja2env.get_template(template_pathname)
+            sql = template.render(map)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
         curs.execute(sql, map);
@@ -282,8 +295,12 @@ class SQLMap(object):
 
     def execute(self, template_pathname, map=None):
         curs = self.curs
-        template = self.jinja2env.get_template(template_pathname)
-        sql = template.render(map)
+        sql = ''
+        if map == None:   # if no map, no need to render template; just use directly
+            sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, template_pathname)
+        else:
+            template = self.jinja2env.get_template(template_pathname)
+            sql = template.render(map)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
         curs.execute(sql, map);
