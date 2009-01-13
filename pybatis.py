@@ -280,11 +280,11 @@ class SQLMap(object):
             self.end()
         return first_datum
 
-    def simple_direct_select_first_datum(self, template_pathname, map=None):
+    def simple_direct_select_first_datum(self, sql, map=None):
         first_datum = None
         try:
             self.begin()
-            first_datum = self.direct_select_first_datum(template_pathname, map)
+            first_datum = self.direct_select_first_datum(sql, map)
             self.commit()
         except:
             self.rollback()
