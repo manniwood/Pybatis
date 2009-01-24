@@ -8,7 +8,7 @@ from psycopg2.extensions import (
     STATUS_READY)
 
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 from jinja2.runtime import Undefined
 
 import logging
