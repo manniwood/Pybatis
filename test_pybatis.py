@@ -25,7 +25,7 @@ form_values = {'USERNAME': 'mwood%'}
 rows = None
 try:
     sqlMap.begin()
-    rows = sqlMap.select('users/select.pgsql', form_values)
+    rows = sqlMap.select(file='users/select.pgsql', map=form_values)
     sqlMap.commit()
 except:
     print 'Exception.'
@@ -41,7 +41,7 @@ else:
     for row in rows:
         print "username: ", row['USERNAME'], " password: ", row['PASSWORD']
 
-more_rows = sqlMap.simple_select('users/select.pgsql', form_values)
+more_rows = sqlMap.select_commit(file='users/select.pgsql', map=form_values)
 
 if more_rows == None:
     print 'Nothing found.'
@@ -50,7 +50,7 @@ else:
         print "username: ", row['USERNAME'], " password: ", row['PASSWORD']
 
 
-first_row = sqlMap.simple_select_first_row('users/select.pgsql', form_values)
+first_row = sqlMap.select_commit(file='users/select.pgsql', map=form_values, ret=pybatis.RETURN_FIRST_ROW)
 
 if first_row == None:
     print 'Nothing found.'
@@ -58,7 +58,7 @@ else:
     print "username: ", first_row['USERNAME'], " password: ", first_row['PASSWORD']
 
 
-first_item = sqlMap.simple_select_first_col_of_first_row('users/select.pgsql', form_values)
+first_item = sqlMap.select_commit(file='users/select.pgsql', map=form_values, ret=pybatis.RETURN_FIRST_DATUM)
 
 if first_item == None:
     print 'Nothing found.'
