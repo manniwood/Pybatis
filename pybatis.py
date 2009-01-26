@@ -156,7 +156,7 @@ class SQLMap(object):
                 # use the sql string directly; no templating to do
                 sql = inline
             else:
-                template = Template(inline)  # XXX: does not use carefully prepared jinja2env and its extra tests
+                template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
@@ -210,7 +210,7 @@ class SQLMap(object):
                 # use the sql string directly; no templating to do
                 sql = inline
             else:
-                template = Template(inline)  # XXX: does not use carefully prepared jinja2env and its extra tests
+                template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
 
         the_time = -1  # an impossible amount of time indicates time not taken
