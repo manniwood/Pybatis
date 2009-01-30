@@ -58,10 +58,10 @@ def row_to_dict (row, keys=None):
         return None
     if keys == None:
         keys = row.keys()
-    dict = {}
+    retdict = {}
     for key in keys:
-        dict[key] = row[key]
-    return dict
+        retdict[key] = row[key]
+    return retdict
 
 def rows_to_dicts (rows, keys=None):
     if rows == None:
@@ -70,10 +70,10 @@ def rows_to_dicts (rows, keys=None):
         return None
     if keys == None:
         keys = rows[0].keys()
-    list = []
+    retlist = []
     for row in rows:
-        list.append(row_to_dict(row, keys))
-    return list
+        retlist.append(row_to_dict(row, keys))
+    return retlist
 
 def start_time_if_debug():
     if (logging.getLogger().getEffectiveLevel() == logging.DEBUG):
@@ -163,7 +163,7 @@ class SQLMap(object):
         curs.execute(sql, map);
         the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
-        logging.debug(curs.query)
+        #logging.debug(curs.query)
         logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
@@ -218,7 +218,7 @@ class SQLMap(object):
         curs.execute(sql, map);
         the_time = elpsed_time_if_debug(the_time)
         logging.debug('Just executed')
-        logging.debug(curs.query)
+        #logging.debug(curs.query)
         logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
