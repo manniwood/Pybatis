@@ -50,31 +50,6 @@ class FileAndInlineBothNoneException(Exception):
 
 ########## utility functions
 
-def no_op (datum):
-    return datum
-
-def row_to_dict (row, keys=None):
-    if row == None:
-        return None
-    if keys == None:
-        keys = row.keys()
-    retdict = {}
-    for key in keys:
-        retdict[key] = row[key]
-    return retdict
-
-def rows_to_dicts (rows, keys=None):
-    if rows == None:
-        return None
-    if len(rows) < 1:
-        return None
-    if keys == None:
-        keys = rows[0].keys()
-    retlist = []
-    for row in rows:
-        retlist.append(row_to_dict(row, keys))
-    return retlist
-
 def start_time_if_debug():
     if (logging.getLogger().getEffectiveLevel() == logging.DEBUG):
         return time.clock()
@@ -110,7 +85,8 @@ class SQLMap(object):
             self.isolation_level = self.default_isolation_level
         else:
             self.isolation_level = isolation_level
-        self.curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        #self.curs = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)  # allows both int indexing and string keys
+        self.curs = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)  # allows only string keys like a real dict
         conn.set_isolation_level(self.default_isolation_level)
 
 
@@ -131,14 +107,6 @@ class SQLMap(object):
 
         if file == None and inline == None:
             raise FileAndInlineBothNoneException
-
-        if transformer == None:
-            if ret == RETURN_EVERYTHING:
-                transformer = rows_to_dicts
-            elif ret == RETURN_FIRST_ROW:
-                transformer = row_to_dict
-            elif ret == RETURN_FIRST_DATUM:
-                transformer = no_op
 
         curs = self.curs
         sql = ''
@@ -169,12 +137,28 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            if ret == RETURN_EVERYTHING:
-                return transformer(curs.fetchall())
-            elif ret == RETURN_FIRST_ROW:
-                return transformer(curs.fetchone())
-            elif ret == RETURN_FIRST_DATUM:
-                return transformer(curs.fetchone()[0])
+            if transformer == None:
+                if ret == RETURN_EVERYTHING:
+                    return curs.fetchall()
+                elif ret == RETURN_FIRST_ROW:
+                    return curs.fetchone()
+                elif ret == RETURN_FIRST_DATUM:
+                    # there is only supposed to be one col in the result set,
+                    # so there should only be one key!
+                    first_row = curs.fetchone()
+                    keys = first_row.keys()
+                    return first_row[keys[0]]
+            else:
+                if ret == RETURN_EVERYTHING:
+                    return transformer(curs.fetchall())
+                elif ret == RETURN_FIRST_ROW:
+                    return transformer(curs.fetchone())
+                elif ret == RETURN_FIRST_DATUM:
+                    # there is only supposed to be one col in the result set,
+                    # so there should only be one key!
+                    first_row = curs.fetchone()
+                    keys = first_row.keys()
+                    return transformer(first_row[keys[0]])
 
 
     def select_commit(self, **args):
