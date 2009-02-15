@@ -158,6 +158,7 @@ class SQLMap(object):
             else:
                 template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
+        #logging.debug('sql: ' + sql)
         the_time = -1  # an impossible amount of time indicates time not taken
         the_time = start_time_if_debug()
         curs.execute(sql, map);
