@@ -202,9 +202,9 @@ class SQLMap(object):
         the_time = start_time_if_debug()
         curs.execute(sql, map);
         the_time = elpsed_time_if_debug(the_time)
-        logging.debug('Just executed')
+        #logging.debug('Just executed')
         #logging.debug(curs.query)
-        logging.debug('time: ' + str(the_time))
+        #logging.debug('time: ' + str(the_time))
         return curs.statusmessage
 
 
