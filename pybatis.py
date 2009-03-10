@@ -103,7 +103,7 @@ class SQLMap(object):
         self.curs = None
 
 
-    def select(self, file=None, inline=None, map=None, transformer=None, ret=RETURN_EVERYTHING):
+    def select(self, file=None, inline=None, map=None, transformer=None, ret=RETURN_EVERYTHING, render=True):
 
         if file == None and inline == None:
             raise FileAndInlineBothNoneException
@@ -112,15 +112,15 @@ class SQLMap(object):
         sql = ''
 
         if file != None:
-            if map == None:
-                # if file but no map, no need to render template; just load file directly
+            if render == False:
+                # As a performance enhancement, do not render template; just load file directly
                 # from filesystem, borrowing our jinja environment's loader to do so
                 sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, file)
             else:
                 template = self.jinja2env.get_template(file)
                 sql = template.render(map)
         else:  # use inline
-            if map == None:
+            if render == False:
                 # use the sql string directly; no templating to do
                 sql = inline
             else:
@@ -175,7 +175,7 @@ class SQLMap(object):
         return list_of_dicts
 
 
-    def execute(self, file=None, inline=None, map=None):
+    def execute(self, file=None, inline=None, map=None, render=True):
 
         if file == None and inline == None:
             raise FileAndInlineBothNoneException
@@ -183,15 +183,15 @@ class SQLMap(object):
         curs = self.curs
         sql = ''
         if file != None:
-            if map == None:
-                # if file but no map, no need to render template; just load file directly
+            if render == False:
+                # As a performance enhancement, do not render template; just load file directly
                 # from filesystem, borrowing our jinja environment's loader to do so
                 sql, filename, uptodate = self.jinja2env.loader.get_source(self.jinja2env, file)
             else:
                 template = self.jinja2env.get_template(file)
                 sql = template.render(map)
         else:  # use inline
-            if map == None:
+            if render == False:
                 # use the sql string directly; no templating to do
                 sql = inline
             else:
