@@ -103,7 +103,7 @@ class SQLMap(object):
         self.curs = None
 
 
-    def select(self, file=None, inline=None, map=None, transformer=None, ret=RETURN_EVERYTHING, render=True):
+    def select(self, file=None, inline=None, map={}, transformer=None, ret=RETURN_EVERYTHING, render=True):
 
         if file == None and inline == None:
             raise FileAndInlineBothNoneException
@@ -175,7 +175,7 @@ class SQLMap(object):
         return list_of_dicts
 
 
-    def execute(self, file=None, inline=None, map=None, render=True):
+    def execute(self, file=None, inline=None, map={}, render=True):
 
         if file == None and inline == None:
             raise FileAndInlineBothNoneException
