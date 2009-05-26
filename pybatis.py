@@ -1,3 +1,22 @@
+# pybatis
+# Copyright 2009 Cystems Technology
+# Author: Manni Wood (mwood aat cystems-tech.com)
+
+# This file is part of pybatis.
+# 
+# pybatis is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# pybatis is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with pybatis.  If not, see <http://www.gnu.org/licenses/>.
+
 import psycopg2
 import psycopg2.extras
 from psycopg2.extensions import (
