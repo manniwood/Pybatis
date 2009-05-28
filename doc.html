@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head><title>Pybatis</title></head>
+<body>
+<p>by Manni Wood, mwood a t cystems-tech.com</p>
+<h1>Pybatis</h1>
+<h2>Origins</h2>
+<p>Pybatis is based on <a href="http://ibatis.apache.org">iBATIS</a>, 
+a SQL mapping library that I used
+on many Java projects.</p>
+<p>When I switched from Java to Python, I wanted to bring iBATIS with me.
+There was no Python version, so I decided to write one myself. Pybatis
+retains what I consider to be the soul of iBATIS, though I have stripped
+it down to only what I think are iBATIS' essentials. I have also traded 
+iBATIS' xml template language for the 
+<a href="http://jinja.pocoo.org/2/">Jinja2</a> templating</p> system.
+Familiarity with Jinja2 is therefore a must to use Pybatis
+to its full potential.</p>
+<h2>Philosophy</h2>
+<p>This section can safely be skipped, unless you are
+curious as to what it is I like about the iBATIS way of
+thinking, and what motivated by port/design of Pybatis.</p>
+<h3>ORM is the Vietnam of Computer Science</h3>
+<p>Ted Neward's now-famous 
+<a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
+blog entry likening object relational mapping to the Vietnam of computer science</a>
+is a must read if you want to know why libraries like iBATIS and
+Pybatis exist. Pybatis is the answer to the gripe "There must
+be a better way." There is!</p>
+<h3>Writing SQL is Fun</h3>
+<p>Pybatis expects you to <em>want</em> to write
+your own SQL. Coders want to write code. SQL is code. Developers
+who do not want to write SQL make about as much sense as
+developers who don't want to write C or Java or Python or
+whatever application language they are using.</p>
+<h3>Portable SQL is Highly Overrated</h3>
+<p>I am strongly biased towards leveraging the strengths
+of any SQL implementation. Not only does Pybatis refuse
+to abstract away your database under a gooey layer of ORM,
+it lets you directly leverage your database's unique
+feature set. There <em>is</em> a reason why
+you chose your database over another, isn't there? Then
+take advantage of it!</p>
+<h3>Dynamic SQL is Not a Compilation Problem; it is a Templating Problem</h3>
+<p>Pybatis allows you to dynamically generate SQL,
+essentially enhancing SQL with if/else and looping
+constructs. This is similar to other templating
+problems, such as generating html or CSS on the fly.
+It is decidedly NOT code generation as ORMs do it. Pybatis
+uses the Jinja templating engine to dynamically generate SQL,
+abandoning iBATIS' unfortunate use of xml to accomplish the
+same task.</p>
+<h3>Objects Suck</h3>
+<p>You don't have to use Object Relational Mapping if you don't
+use objects! Countless enterprise gurus will tell you to map
+your SQL tables into Java Beans, condemning to you a hell of
+always having to maintain and update a sea of getters and setters
+every time you change your data model.</p>
+<p>Here's an idea: how about mapping
+your SQL result sets (not tables, actual result sets from carefully
+crafted queries) into lists of dicts? That is the default behaviour
+of Pybatis. Objects are bad. Data structures are good. (And yes,
+I realise data structures are implemented as objects in most modern
+languages, but hashes and lists pre-date OOP, if you take my point.)</p>
+<h3>Lecture Over</h3>
+<p>The above biases are what I loved about (read into?) iBATIS
+and these biases live on in Pybatis.</p>
+<h2>Using Pybatis</h2>
+<h3>Configuring a SQL mapper</h3>
+<p>The first thing you need to do is configure a SQL mapper
+in the flavour of your database. (For now, Pybatis only supports
+a psycopg2-flavoured SQL mapper, but it's organised in such a way so that
+SQL mappers for other database drivers can be added to the library too. Note
+partcularly that this pybatis flavour is named psycopg2 and not PostgresSQL,
+in case someone wants to write a PyGreSQL version for PostgreSQL. Also,
+the psycopg2 version of the Pybatis SQL mapper leverages specific capabilities
+of the psycopg2 driver; the whole point of Pybatis is to encourage other
+flavours to leverage the capabilities of other databases' DB API drivers.)</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2.SQLMap(conn, '/petstore-app/pybatis')
+</pre>
+<p>Already, there are a few things to note. First, Pybatis needs to be handed
+a database connection. Pybatis does not manage database connections directly,
+and most certainly does not do connection pooling. There are plenty of connection
+poolers out there, and I felt no need to write one myself.</p>
+<p>(This would, however, be a good time to point out that often you don't need
+a database connection pooler. For instance, in a web application on Apache
+using the pre-fork MPM and mod_wsgi, each Apache process contains its own Python 
+interpreter. It's trivial for each interpreter to just maintain its own connection
+to the database, eliminating the need for connection pooling. In essence, your
+Apache pool of processes is also your pool of connections. This solves <strong>so</strong>
+many problems.)</p>
+<p>Please also note that the second argument to the SQLMap constructor is a location
+in your filesystem for where you keep your SQL templates.</p>
+<h3>Using an SQL mapper</h3>
+</p>Now is a good time for an
+example.</p>
+<p>Let's say your pet store database contains the following table:</p>
+<pre>
+create sequence pet_ids start 1;
+create table pets (
+    id     bigint constraint "Pet id must be unique." primary key not null,
+    name   varchar(50) not null,
+    colour varchar(30) not null);
+</pre>
+<p>Let's say you have a web application where you sometimes want to show the colour
+of a pet, and other times not. You have a web form that lets the user decide.
+Let's say your form values are in a dict named form_values, and the form
+field is form_values["SHOW_COLOUR"], and will contain the string "true" (because
+all form values are delivered as strings) if we want to
+show the color when we select pets from the database.</p>
+<p>You could make a file called /petstore-app/pybatis/select_pets.sql with the following
+contents:</p>
+<pre>
+   select id      as "ID",
+          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
+          colour  as "COLOUR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+</pre>
+<p>(For you Jinja users, please note that the test not_empty is added to the global list of Jinja
+tests by pybatis.psycopg2.SQLMap when it is instantiated.)</p>
+<p>And, from within your Python code, you would call the sql query like so:</p>
+<pre>
+results = SQL_MAP.select_commit(file='select_pets.sql', map=form_values)
+</pre>
+<p>Of course, an easier way to do the same thing would be to use Pybatis'
+inline option:</p>
+<pre>
+results = SQL_MAP.select_commit(inline='''
+   select id      as "ID",
+          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
+          colour  as "COLOUR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+''', map=form_values)
+</pre>
+<p>This prompts the question: with inlining, why would you ever store your
+SQL templates in separate files? One reasonable answer is if you want to use the same SQL template in
+more that one location in your Python source code. Being able to store your SQL templates
+in files starts to make a lot of sense. Also, sometimes a SQL statement just gets so long
+that it increases the readability of the Python by moving the SQL out to its own file.</p>
+<p>In the above example, the results of our sql statement have been put in a variable
+called results. Results is simply a list of dicts that can be iterated through, like so:</p>
+<pre>
+# print all of the IDs
+if results == None:
+    print "No results found."
+else:
+    for db_row in results
+        print("%(ID)i" % db_row)
+</pre>
+<p>Some things to note:</p>
+<p>If there are no results for your query, None will be returned,
+so you should always check for None.</p>
+<p>In your SQL, always name your columns in your result set so that
+you will know which key names to use for the dicts that get returned.
+(And remember that they are case-sensitive!)</p>
+<p>Your database's DB API implementation will determine the return
+types of all columns. In our example, psycopg automatically gives us the ID field
+as a python int; hence the "i" in our string formatter in our sample Python code
+above.</p>
+<p>Don't forget that you can control the return types of columns leveraging
+your database's ability to do so:</p>
+<pre>
+   select cast(id as text) as "ID",
+          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
+          colour           as "COLOUR",
+          {% endif %}
+          name             as "NAME"
+     from pets
+</pre>
+<pre>
+results = SQL_MAP.select_commit(file='select_pets.sql', map=form_values)
+# print all of the IDs as strings
+if results == None:
+    print "No results found."
+else:
+    for db_row in results
+        print("%(ID)s" % db_row)
+</pre>
+<p>
+TODO:
+link to Jinja and earlier mention that familiarity with Jinja is essential
+how to feed in variables
+recommended casting of fed-in variables
+security
+returning one row to a dict
+returning one col of one row to a scalar
+calling stored procs
+transactions
+exceptions
+tips and tricks, like "where 1 = 1"
+</p>
+</body>
+</html>
+
