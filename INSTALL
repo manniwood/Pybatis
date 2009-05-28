@@ -1,0 +1,9 @@
+You have two options:
+
+1. Copy the pybatis directory to a directory that is already in
+your Python path, or
+
+2. Point your Python path to the directory holding this file,
+so that the pybatis directory will be in the Python path (so
+that 'import pybatis' will work).
+
