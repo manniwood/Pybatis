@@ -75,7 +75,7 @@ partcularly that this pybatis flavour is named psycopg2 and not PostgresSQL,
 in case someone wants to write a PyGreSQL version for PostgreSQL. Also,
 the psycopg2 version of the Pybatis SQL mapper leverages specific capabilities
 of the psycopg2 driver; the whole point of Pybatis is to encourage other
-flavours to leverage the capabilities of other databases' DB API drivers.)</p>
+SQL mapper flavours to leverage the capabilities of other databases' DB API drivers.)</p>
 <pre>
 import psycopg2
 import psycopg2.extras
@@ -98,7 +98,7 @@ Apache pool of processes is also your pool of connections. This solves <strong>s
 many problems.)</p>
 <p>Please also note that the second argument to the SQLMap constructor is a location
 in your filesystem for where you keep your SQL templates.</p>
-<h3>Using an SQL mapper</h3>
+<h3>Using a SQL mapper</h3>
 </p>Now is a good time for an
 example.</p>
 <p>Let's say your pet store database contains the following table:</p>
@@ -165,8 +165,9 @@ so you should always check for None.</p>
 you will know which key names to use for the dicts that get returned.
 (And remember that they are case-sensitive!)</p>
 <p>Your database's DB API implementation will determine the return
-types of all columns. In our example, psycopg automatically gives us the ID field
-as a python int; hence the "i" in our string formatter in our sample Python code
+types of all columns. In our example, psycopg2 automatically gives us the 
+ID field (which we had declared type bigint in PostgreSQL)
+as a Python int; hence the "i" in our string formatter in our sample Python code
 above.</p>
 <p>Don't forget that you can control the return types of columns leveraging
 your database's ability to do so:</p>
@@ -187,6 +188,13 @@ else:
     for db_row in results
         print("%(ID)s" % db_row)
 </pre>
+<p>This is not a Pybatis trick; this is standard SQL. (It <em>is</em> 
+an example of how Pybatis
+gets out of your way and lets you use a cast in your SQL statement. It's
+also an example of how psycopg2 auto-detects return types and tries
+to pick a Python equivalent: in this case, translating PostgreSQL text
+to a Python string.)
+</p>
 <p>
 TODO:
 link to Jinja and earlier mention that familiarity with Jinja is essential
