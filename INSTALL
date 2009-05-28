@@ -1,9 +1,17 @@
-You have two options:
+Dependencies:
 
-1. Copy the pybatis directory to a directory that is already in
+1. Ensure Jinja2 is installed.
+
+2. Ensure the Python DB API - compliant driver for your database
+is installed. (Currently, Pybatis only supports psycopg for
+PostgreSQL.)
+
+Then, install Pybatis. You have two options:
+
+1. Copy the ./pybatis directory to a directory that is already in
 your Python path, or
 
 2. Point your Python path to the directory holding this file,
-so that the pybatis directory will be in the Python path (so
+so that the ./pybatis directory will be in the Python path (so
 that 'import pybatis' will work).
 
