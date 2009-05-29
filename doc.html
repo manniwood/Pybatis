@@ -80,10 +80,10 @@ SQL mapper flavours to leverage the capabilities of other databases' DB API driv
 import psycopg2
 import psycopg2.extras
 import pybatis
-import pybatis.psycopg2
+import pybatis.psycopg2_jinja2
 
 conn = psycopg2.connect('user=theuser dbname=petstoredb')
-SQL_MAP = pybatis.psycopg2.SQLMap(conn, '/petstore-app/pybatis')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
 </pre>
 <p>Already, there are a few things to note. First, Pybatis needs to be handed
 a database connection. Pybatis does not manage database connections directly,
