@@ -2,80 +2,88 @@
 <html>
 <head><title>Pybatis</title></head>
 <body>
-<p>by Manni Wood, mwood a t cystems-tech.com</p>
+<p>brought to you by Cystems Technology</p>
+<p>written by Manni Wood, mwood a t cystems-tech.com, based on
+Clinton Begin's original idea in <a href="http://ibatis.apache.org">iBATIS</a>.</p>
 <h1>Pybatis</h1>
-<h2>Origins</h2>
-<p>Pybatis is based on <a href="http://ibatis.apache.org">iBATIS</a>, 
-a SQL mapping library that I used
-on many Java projects.</p>
-<p>When I switched from Java to Python, I wanted to bring iBATIS with me.
-There was no Python version, so I decided to write one myself. Pybatis
-retains what I consider to be the soul of iBATIS, though I have stripped
-it down to only what I think are iBATIS' essentials. I have also traded 
-iBATIS' xml template language for the 
-<a href="http://jinja.pocoo.org/2/">Jinja2</a> templating</p> system.
-Familiarity with Jinja2 is therefore a must to use Pybatis
-to its full potential.</p>
-<h2>Philosophy</h2>
-<p>This section can safely be skipped, unless you are
-curious as to what it is I like about the iBATIS way of
-thinking, and what motivated by port/design of Pybatis.</p>
-<h3>ORM is the Vietnam of Computer Science</h3>
-<p>Ted Neward's now-famous 
-<a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
-blog entry likening object relational mapping to the Vietnam of computer science</a>
-is a must read if you want to know why libraries like iBATIS and
-Pybatis exist. Pybatis is the answer to the gripe "There must
-be a better way." There is!</p>
-<h3>Writing SQL is Fun</h3>
-<p>Pybatis expects you to <em>want</em> to write
-your own SQL. Coders want to write code. SQL is code. Developers
-who do not want to write SQL make about as much sense as
-developers who don't want to write C or Java or Python or
-whatever application language they are using.</p>
-<h3>Portable SQL is Highly Overrated</h3>
-<p>I am strongly biased towards leveraging the strengths
-of any SQL implementation. Not only does Pybatis refuse
-to abstract away your database under a gooey layer of ORM,
-it lets you directly leverage your database's unique
-feature set. There <em>is</em> a reason why
-you chose your database over another, isn't there? Then
-take advantage of it!</p>
-<h3>Dynamic SQL is Not a Compilation Problem; it is a Templating Problem</h3>
-<p>Pybatis allows you to dynamically generate SQL,
-essentially enhancing SQL with if/else and looping
-constructs. This is similar to other templating
-problems, such as generating html or CSS on the fly.
-It is decidedly NOT code generation as ORMs do it. Pybatis
-uses the Jinja templating engine to dynamically generate SQL,
-abandoning iBATIS' unfortunate use of xml to accomplish the
-same task.</p>
-<h3>Objects Suck</h3>
-<p>You don't have to use Object Relational Mapping if you don't
-use objects! Countless enterprise gurus will tell you to map
-your SQL tables into Java Beans, condemning to you a hell of
-always having to maintain and update a sea of getters and setters
-every time you change your data model.</p>
-<p>Here's an idea: how about mapping
-your SQL result sets (not tables, actual result sets from carefully
-crafted queries) into lists of dicts? That is the default behaviour
-of Pybatis. Objects are bad. Data structures are good. (And yes,
-I realise data structures are implemented as objects in most modern
-languages, but hashes and lists pre-date OOP, if you take my point.)</p>
-<h3>Lecture Over</h3>
-<p>The above biases are what I loved about (read into?) iBATIS
-and these biases live on in Pybatis.</p>
+<h2>Overview</h2>
+<p>Pybatis is Python's DB API + templates + convenience methods.</p>
+<p>For instance, let's say you have user input in a dict called form_values,
+and if form_values["SHOW_COLOUR"] contains the string "true", you want to
+select colors from your pet store database, and otherwise, you don't.</p>
+<p>Your Python DB API implementation might look like this:</p>
+<pre>
+import psycopg2
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+curs = conn.cursor()
+sql = '''
+   select id as "ID",
+'''
+if form_values["SHOW_COLOUR"] == "true":
+    sql += '''
+    colour as "COLOUR",
+    ''''
+sql += '''
+     name as "NAME"
+     from pets
+'''
+results = curs.execute(sql)
+</pre>
+<p>Of course, you wouldn't do this any more than you would
+create HTML programmatically. Instead, you'd use
+a templating system:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
+results = SQL_MAP.select_commit(inline='''
+   select id      as "ID",
+          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
+          colour  as "COLOUR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+''', map=form_values)
+</pre>
+<p>And, of course, if you wanted your sql code in its own file,
+the same way you generally keep your html in a different file,
+you could do that too: put the following in the file 
+/petstore-app/pybatis/select_pets.sql with the following
+contents:</p>
+<pre>
+   select id      as "ID",
+          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
+          colour  as "COLOUR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+</pre>
+<p>and then your calling code would look more like this:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
+
+results = SQL_MAP.select_commit(file='select_pets.sql', map=form_values)
+</pre>
+<p>That's the essential idea of Pybatis. Now, the details.</p>
+
 <h2>Using Pybatis</h2>
 <h3>Configuring a SQL mapper</h3>
 <p>The first thing you need to do is configure a SQL mapper
-in the flavour of your database. (For now, Pybatis only supports
-a psycopg2-flavoured SQL mapper, but it's organised in such a way so that
-SQL mappers for other database drivers can be added to the library too. Note
-partcularly that this pybatis flavour is named psycopg2 and not PostgresSQL,
-in case someone wants to write a PyGreSQL version for PostgreSQL. Also,
-the psycopg2 version of the Pybatis SQL mapper leverages specific capabilities
-of the psycopg2 driver; the whole point of Pybatis is to encourage other
-SQL mapper flavours to leverage the capabilities of other databases' DB API drivers.)</p>
+in the flavour of your database and templating engine. For now, 
+Pybatis only supports the psycopg2 driver for PostgreSQL, and
+the <a href="http://jinja.pocoo.org/2/">Jinja2</a> templating engine.
+So right now, the choice of which mapper to use is easy; there's only
+one. :-)</p>
 <pre>
 import psycopg2
 import psycopg2.extras
@@ -92,12 +100,22 @@ poolers out there, and I felt no need to write one myself.</p>
 <p>(This would, however, be a good time to point out that often you don't need
 a database connection pooler. For instance, in a web application on Apache
 using the pre-fork MPM and mod_wsgi, each Apache process contains its own Python 
-interpreter. It's trivial for each interpreter to just maintain its own connection
-to the database, eliminating the need for connection pooling. In essence, your
-Apache pool of processes is also your pool of connections. This solves <strong>so</strong>
-many problems.)</p>
+interpreter, and, in a framework like Django, its own connection to the database.
+This eliminates the need for connection pooling.)</p>
 <p>Please also note that the second argument to the SQLMap constructor is a location
-in your filesystem for where you keep your SQL templates.</p>
+in your filesystem for where you keep your SQL templates. Using the example
+setting above, if you call 
+<code>SQL_MAP.select_commit(file='select_pets.sql')</code>, the file argument will
+get translated to '/petstore-app/pybatis/select_pets.sql'. (Note how Pybatis
+does the right thing and inserts the slash between the config dir and the
+file name.)</p>
+<p>You can have as many sql mappers as you want, but each one will need its own
+database connection. For a web app, it's usually best to have one sql map per
+Python interpreter. In an environment like Django, where each Python interpreter
+answers one web request at a time, having one sql map uses the least resources
+and has no resource contention issues.</p>
+
+XXXXX START HERE
 <h3>Using a SQL mapper</h3>
 </p>Now is a good time for an
 example.</p>
@@ -208,6 +226,83 @@ transactions
 exceptions
 tips and tricks, like "where 1 = 1"
 </p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h2>Origins</h2>
+<p>Pybatis is based on , 
+a SQL mapping library that I used
+on many Java projects.</p>
+<p>When I switched from Java to Python, I wanted to bring iBATIS with me.
+There was no Python version, so I decided to write one myself. Pybatis
+retains what I consider to be the soul of iBATIS, though I have stripped
+it down to only what I think are iBATIS' essentials. I have also traded 
+iBATIS' xml template language for the 
+<a href="http://jinja.pocoo.org/2/">Jinja2</a> templating</p> system.
+Familiarity with Jinja2 is therefore a must to use Pybatis
+to its full potential.</p>
+<h2>Philosophy</h2>
+<p>This section can safely be skipped, unless you are
+curious as to what it is I like about the iBATIS way of
+thinking, and what motivated by port/design of Pybatis.</p>
+<h3>ORM is the Vietnam of Computer Science</h3>
+<p>Ted Neward's now-famous 
+<a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
+blog entry likening object relational mapping to the Vietnam of computer science</a>
+is a must read if you want to know why libraries like iBATIS and
+Pybatis exist. Pybatis is the answer to the gripe "There must
+be a better way." There is!</p>
+<h3>Writing SQL is Fun</h3>
+<p>Pybatis expects you to <em>want</em> to write
+your own SQL. Coders want to write code. SQL is code. Developers
+who do not want to write SQL make about as much sense as
+developers who don't want to write C or Java or Python or
+whatever application language they are using.</p>
+<h3>Portable SQL is Highly Overrated</h3>
+<p>I am strongly biased towards leveraging the strengths
+of any SQL implementation. Not only does Pybatis refuse
+to abstract away your database under a gooey layer of ORM,
+it lets you directly leverage your database's unique
+feature set. There <em>is</em> a reason why
+you chose your database over another, isn't there? Then
+take advantage of it!</p>
+<h3>Dynamic SQL is Not a Compilation Problem; it is a Templating Problem</h3>
+<p>Pybatis allows you to dynamically generate SQL,
+essentially enhancing SQL with if/else and looping
+constructs. This is similar to other templating
+problems, such as generating html or CSS on the fly.
+It is decidedly NOT code generation as ORMs do it. Pybatis
+uses the Jinja templating engine to dynamically generate SQL,
+abandoning iBATIS' unfortunate use of xml to accomplish the
+same task.</p>
+<h3>Objects Suck</h3>
+<p>You don't have to use Object Relational Mapping if you don't
+use objects! Countless enterprise gurus will tell you to map
+your SQL tables into Java Beans, condemning to you a hell of
+always having to maintain and update a sea of getters and setters
+every time you change your data model.</p>
+<p>Here's an idea: how about mapping
+your SQL result sets (not tables, actual result sets from carefully
+crafted queries) into lists of dicts? That is the default behaviour
+of Pybatis. Objects are bad. Data structures are good. (And yes,
+I realise data structures are implemented as objects in most modern
+languages, but hashes and lists pre-date OOP, if you take my point.)</p>
+<h3>Lecture Over</h3>
+<p>The above biases are what I loved about (read into?) iBATIS
+and these biases live on in Pybatis.</p>
+
+
+
 </body>
 </html>
 
