@@ -7,11 +7,21 @@
 Clinton Begin's original idea in <a href="http://ibatis.apache.org">iBATIS</a>.</p>
 <h1>Pybatis</h1>
 <h2>Overview</h2>
-<p>Pybatis is Python's DB API + templates + convenience methods.</p>
-<p>For instance, let's say you have user input in a dict called form_values,
-and if form_values["SHOW_COLOUR"] contains the string "true", you want to
-select colors from your pet store database, and otherwise, you don't.</p>
-<p>Your Python DB API implementation might look like this:</p>
+<p>Pybatis is three things combined: Python's DB API + templates + convenience
+methods. Pybatis uses a templating engine to bring dynamic features to SQL in the same
+way templating engines are often used to bring dynamic features to HTML. Pybatis
+also provides convenience methods around Python's DB API for exucuting the SQL
+produced by the templating engine.</p>
+<p>Let's dive in with a code example. Say you want to select two columns, ID
+and NAME, from
+a table in your database to show to users of your application. But let's say
+that sometimes you'd optionally like to show a third column, COLOUR, too.</p>
+<p>Say your Python code stores
+user input in a dict called form_values, and that if
+ form_values["SHOW_COLOUR"] contains the string "true", you'll show
+the COLOUR column in your SQL select results.</p>
+<p>Not using Pybatis, a regular Python DB API implementation might look 
+like this:</p>
 <pre>
 import psycopg2
 conn = psycopg2.connect('user=theuser dbname=petstoredb')
@@ -19,7 +29,8 @@ curs = conn.cursor()
 sql = '''
    select id as "ID",
 '''
-if form_values["SHOW_COLOUR"] == "true":
+show_colour = form_values.get("SHOW_COLOUR") != None and  == "true":
+if show_colour != None and show_colour == "true":
     sql += '''
     colour as "COLOUR",
     ''''
@@ -29,9 +40,8 @@ sql += '''
 '''
 results = curs.execute(sql)
 </pre>
-<p>Of course, you wouldn't do this any more than you would
-create HTML programmatically. Instead, you'd use
-a templating system:</p>
+<p>It's not pretty, and not particularly easy to maintain. Here's how
+you'd do the same thing in Pybatis:</p>
 <pre>
 import psycopg2
 import psycopg2.extras
@@ -49,9 +59,11 @@ results = SQL_MAP.select_commit(inline='''
      from pets
 ''', map=form_values)
 </pre>
-<p>And, of course, if you wanted your sql code in its own file,
-the same way you generally keep your html in a different file,
-you could do that too: put the following in the file 
+<p>That's a bit tidier, but the SQL code is still embedded in
+your Python. Some people would prefer to have the sql template
+code in its own file, much the same way we keep our html template
+code in separate files.</p>
+<p>And you can: put the SQL template code in a file named
 /petstore-app/pybatis/select_pets.sql with the following
 contents:</p>
 <pre>
