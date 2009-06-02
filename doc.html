@@ -152,6 +152,9 @@ results = SQL_MAP.select_commit(inline='''
 for row in results:
     print "%(ID)i" % row
 </pre>
+<h4>When There Are No Results</h4>
+<p>If there are no results for your query, None will be returned,
+so you should always check for None.</p>
 <h4>Return Types</h4>
 <p>Pybatis lets the underlying DB API driver decide what the return
 types will be for each column. If you want to control the return
@@ -161,7 +164,7 @@ if our pets table is defined as</p>
 create table pets (
     id bigint constraint "Pet ID must be unique." primary key not null,
     colour varchar(50) not null,
-    name varchar(50) not null
+    name varchar(50) constraint "Pet name must be unique." unique not null
 );
 </pre>
 <p>but you wanted to select the ID column as an integer, you could
@@ -264,7 +267,7 @@ to all the other error correction/detection!).</p>
 <p>These work as expected, except you use the SQL map's execute*
 methods instead of the SQL map's select* methods.</p>
 <pre>
-        mt_config.SQL_MAP.execute_commit(inline='''
+        SQL_MAP.execute_commit(inline='''
         insert into pets
                     (id,
                      colour,
@@ -276,7 +279,7 @@ methods instead of the SQL map's select* methods.</p>
 </pre>
 <p>An update:</p>
 <pre>
-        mt_config.SQL_MAP.execute_commit(inline='''
+        SQL_MAP.execute_commit(inline='''
         update pets
            set colour = %(COLOUR)s
          where id = cast(%(ID)s as bigint)
@@ -293,63 +296,76 @@ by adding render=False to the method call,
 as we have done in the insert and update examples.</p>
 
 <h3>Stored Procedures</h3>
+<p>Stored procedures get called through the
+SQL map's execute* methods:</p>
+<pre>
+    SQL_MAP.execute_commit(inline='''
+        select my_stored_proc(cast(%(ID)s as bigint),
+                              cast(%(SOME_OTHER_FIELD)s as bigint))
+    ''', map=form_values, render=False)
+</pre>
+<p>XXX: but what about when a stored proc returns something?
+will the select* methods work?</p>
 
-<h3>Transactions</h3>
+<h3>Transactions and Exception Handling</h3>
+<p>So far, we have been using SQL_MAP.select_commit()
+and SQL_MAP.execute_commit(). Both of these methods
+explicitly begin a transaction, run the query, and
+commit the transaction. If the DB API throws an exception,
+the SQL map will automatically roll back the transaction
+and throw the exception up to the calling code to handle.
+So these two methods are the ones you will find yourself
+using most of the time.</p>
+<p>However, sometimes you need to control the transaction
+and exception handling yourself. Here's how:</p>
+<pre>
+    error_message = ''
+    try:
+        mt_config.SQL_MAP.begin()
+        new_pet_id = mt_config.SQL_MAP.select(
+            ret=pybatis.RETURN_FIRST_DATUM,
+            inline='''
+                select nextval('pet_ids') as "ID"
+            ''')
+        form_values['ID'] = new_pet_id
+        mt_config.SQL_MAP.execute(inline='''
+            insert into pets
+                        (id,
+                         colour,
+                         name)
+                 values (cast(%(ID)s as bigint),
+                         %(COLOUR)s,
+                         %(NAME)s)
+        ''', map=form_values)
+        mt_config.SQL_MAP.commit()
+    except (psycopg2.IntegrityError,), e:
+        mt_config.SQL_MAP.rollback()
+        error_msg = str(e)
+        if error_msg.find('Pet name must be unique') &gt; -1:
+            error_message = 'Pet name already exists. Please pick another.'
+            # error_message would get used in later error handling
+            # when it is found to not be empty
+        else:
+            # not the integrity error we were expecting; rollback is alredy done; raise
+            raise
+    except:
+        mt_config.SQL_MAP.rollback()
+        raise
+    finally:
+        mt_config.SQL_MAP.end()  # IMPORTANT!!! Does final cleanup tasks
+<pre>
 
-<h3>Exception Handling</h3>
+
 
 <h3>Debugging</h3>
+<p>In applications that make a lot of database calls, debugging
+logs can get too informative too quickly.</p>
 
-XXXXX START HERE
+XXXXX START HERE; cover the odd but useful combination of debugging
+options for the SQL mapper as well as the per-method-call config
+options.
 
-<p>Some things to note:</p>
-<p>If there are no results for your query, None will be returned,
-so you should always check for None.</p>
-<p>In your SQL, always name your columns in your result set so that
-you will know which key names to use for the dicts that get returned.
-(And remember that they are case-sensitive!)</p>
-<p>Your database's DB API implementation will determine the return
-types of all columns. In our example, psycopg2 automatically gives us the 
-ID field (which we had declared type bigint in PostgreSQL)
-as a Python int; hence the "i" in our string formatter in our sample Python code
-above.</p>
-<p>Don't forget that you can control the return types of columns leveraging
-your database's ability to do so:</p>
-<pre>
-   select cast(id as text) as "ID",
-          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
-          colour           as "COLOUR",
-          {% endif %}
-          name             as "NAME"
-     from pets
-</pre>
-<pre>
-results = SQL_MAP.select_commit(file='select_pets.sql', map=form_values)
-# print all of the IDs as strings
-if results == None:
-    print "No results found."
-else:
-    for db_row in results
-        print("%(ID)s" % db_row)
-</pre>
-<p>This is not a Pybatis trick; this is standard SQL. (It <em>is</em> 
-an example of how Pybatis
-gets out of your way and lets you use a cast in your SQL statement. It's
-also an example of how psycopg2 auto-detects return types and tries
-to pick a Python equivalent: in this case, translating PostgreSQL text
-to a Python string.)
-</p>
-<p>
 TODO:
-link to Jinja and earlier mention that familiarity with Jinja is essential
-how to feed in variables
-recommended casting of fed-in variables
-security
-returning one row to a dict
-returning one col of one row to a scalar
-calling stored procs
-transactions
-exceptions
 tips and tricks, like "where 1 = 1"
 </p>
 
@@ -365,7 +381,7 @@ tips and tricks, like "where 1 = 1"
 
 
 
-<h2>Origins</h2>
+<h2>Origins/Philosophy</h2>
 <p>Pybatis is based on , 
 a SQL mapping library that I used
 on many Java projects.</p>
@@ -423,9 +439,6 @@ crafted queries) into lists of dicts? That is the default behaviour
 of Pybatis. Objects are bad. Data structures are good. (And yes,
 I realise data structures are implemented as objects in most modern
 languages, but hashes and lists pre-date OOP, if you take my point.)</p>
-<h3>Lecture Over</h3>
-<p>The above biases are what I loved about (read into?) iBATIS
-and these biases live on in Pybatis.</p>
 
 
 
