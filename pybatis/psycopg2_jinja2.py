@@ -122,10 +122,13 @@ class SQLMap(object):
                 if ret == pybatis.RETURN_EVERYTHING:
                     return curs.fetchall()
                 elif ret == pybatis.RETURN_FIRST_ROW:
+                    # XXX: consider throwing an exception if more than one row
                     return curs.fetchone()
                 elif ret == pybatis.RETURN_FIRST_DATUM:
+                    # XXX: consider throwing an exception if more than one row
                     # there is only supposed to be one col in the result set,
                     # so there should only be one key!
+                    # XXX: consider throwing an exception if more than one key
                     first_row = curs.fetchone()
                     keys = first_row.keys()
                     return first_row[keys[0]]
@@ -133,10 +136,13 @@ class SQLMap(object):
                 if ret == pybatis.RETURN_EVERYTHING:
                     return transformer(curs.fetchall())
                 elif ret == pybatis.RETURN_FIRST_ROW:
+                    # XXX: consider throwing an exception if more than one row
                     return transformer(curs.fetchone())
                 elif ret == pybatis.RETURN_FIRST_DATUM:
+                    # XXX: consider throwing an exception if more than one row
                     # there is only supposed to be one col in the result set,
                     # so there should only be one key!
+                    # XXX: consider throwing an exception if more than one key
                     first_row = curs.fetchone()
                     keys = first_row.keys()
                     return transformer(first_row[keys[0]])
