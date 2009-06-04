@@ -56,3 +56,13 @@ class CursorAlreadyOpenException(Exception):
 class FileAndInlineBothNoneException(Exception):
     pass
 
+class MoreThanOneRowException(Exception):
+    '''Raised when one row asked for, but more than one row
+       in result set.'''
+    pass
+
+class MoreThanOneColumnException(Exception):
+    '''Raised when one column asked for, but more than one column
+       in result row.'''
+    pass
+

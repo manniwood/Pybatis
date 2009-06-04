@@ -122,29 +122,31 @@ class SQLMap(object):
                 if ret == pybatis.RETURN_EVERYTHING:
                     return curs.fetchall()
                 elif ret == pybatis.RETURN_FIRST_ROW:
-                    # XXX: consider throwing an exception if more than one row
+                    if curs.rowcount > 1:
+                        raise pybatis.MoreThanOneRowExcepton
                     return curs.fetchone()
                 elif ret == pybatis.RETURN_FIRST_DATUM:
-                    # XXX: consider throwing an exception if more than one row
-                    # there is only supposed to be one col in the result set,
-                    # so there should only be one key!
-                    # XXX: consider throwing an exception if more than one key
+                    if curs.rowcount > 1:
+                        raise pybatis.MoreThanOneRowExcepton
                     first_row = curs.fetchone()
                     keys = first_row.keys()
+                    if len(keys) > 1:
+                        raise pybatis.MoreThanOneColumnExcepton
                     return first_row[keys[0]]
             else:
                 if ret == pybatis.RETURN_EVERYTHING:
                     return transformer(curs.fetchall())
                 elif ret == pybatis.RETURN_FIRST_ROW:
-                    # XXX: consider throwing an exception if more than one row
+                    if curs.rowcount > 1:
+                        raise pybatis.MoreThanOneRowExcepton
                     return transformer(curs.fetchone())
                 elif ret == pybatis.RETURN_FIRST_DATUM:
-                    # XXX: consider throwing an exception if more than one row
-                    # there is only supposed to be one col in the result set,
-                    # so there should only be one key!
-                    # XXX: consider throwing an exception if more than one key
+                    if curs.rowcount > 1:
+                        raise pybatis.MoreThanOneRowExcepton
                     first_row = curs.fetchone()
                     keys = first_row.keys()
+                    if len(keys) > 1:
+                        raise pybatis.MoreThanOneColumnExcepton
                     return transformer(first_row[keys[0]])
 
 
