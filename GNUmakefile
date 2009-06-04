@@ -27,7 +27,7 @@ xxx:
 
 
 .PHONY: release
-release:
+release: clean
 	$(MKDIR) $(DISTDIR)
 	cp ./ACKNOWLEDGEMENTS $(DISTDIR)
 	cp ./COPYING $(DISTDIR)
