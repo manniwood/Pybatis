@@ -121,11 +121,11 @@ class SQLMap(object):
             if transformer == None:
                 if ret == pybatis.RETURN_EVERYTHING:
                     return curs.fetchall()
-                elif ret == pybatis.RETURN_FIRST_ROW:
+                elif ret == pybatis.RETURN_ONE_ROW:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     return curs.fetchone()
-                elif ret == pybatis.RETURN_FIRST_DATUM:
+                elif ret == pybatis.RETURN_ONE_DATUM:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     first_row = curs.fetchone()
@@ -136,11 +136,11 @@ class SQLMap(object):
             else:
                 if ret == pybatis.RETURN_EVERYTHING:
                     return transformer(curs.fetchall())
-                elif ret == pybatis.RETURN_FIRST_ROW:
+                elif ret == pybatis.RETURN_ONE_ROW:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     return transformer(curs.fetchone())
-                elif ret == pybatis.RETURN_FIRST_DATUM:
+                elif ret == pybatis.RETURN_ONE_DATUM:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     first_row = curs.fetchone()

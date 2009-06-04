@@ -4,8 +4,11 @@
 <body>
 <p>brought to you by Cystems Technology</p>
 <p>written by Manni Wood, mwood a t cystems-tech.com, based on
-Clinton Begin's original idea in <a href="http://ibatis.apache.org">iBATIS</a>.</p>
+Clinton Begin's original idea in 
+<a href="http://ibatis.apache.org">iBATIS</a>.</p>
+
 <h1>Pybatis</h1>
+
 <h2>Overview</h2>
 <p>Pybatis is three things combined: Python's 
 <a href="http://www.python.org/dev/peps/pep-0249/">DB API</a> + 
@@ -20,6 +23,7 @@ a templating problem rather than a code generation problem (as
 in most ORM libraries) comes from 
 <a href="http://ibatis.apache.org">iBATIS</a>, after which
 Pybatis is named, with great respect.</p>
+
 <h2>First Example</h2>
 <p>Let's dive in with a code example. Say you want to select two columns, ID
 and NAME, from a table in your database, but 
@@ -111,22 +115,22 @@ experience, I've used both styles within the same project.</p>
 Pybatis currently only has one dependency: 
 the <a href="http://jinja.pocoo.org/2/">Jinja2</a> templating engine.
 Ensure that it is installed
-<h3>Configuring a SQL mapper</h3>
-<p>The first thing you need to do is configure a SQL mapper to
-use in the rest of your code. You'll almost always use a SQL mapper
+<h3>Configuring a SQL map</h3>
+<p>The first thing you need to do is configure a SQL map to
+use in the rest of your code. You'll almost always use a SQL map
 like a singleton: configure it once at application startup,
 and call on the one intance everywhere else you need to interact
 with your database. But you aren't forced to: if you need to 
 connect with more than
 one database, or if you need to connect to the same database
 with different configurations (perhaps different user permissions) you
-may configure two or more SQL mappers.</p>
-<p>The first thing to do when configuring a SQL mapper is choose
-a flavour.  Each SQL mapper implementation is named after the 
+may configure two or more SQL maps.</p>
+<p>The first thing to do when configuring a SQL map is choose
+a flavour.  Each SQL map implementation is named after the 
 DB API driver it supports and the templating engine it uses. For now, 
 Pybatis only supports the psycopg2 driver for PostgreSQL, and
 the <a href="http://jinja.pocoo.org/2/">Jinja2</a> templating engine.
-So right now, the choice of which mapper to use is easy; there's only
+So right now, the choice of which map to use is easy; there's only
 one. :-)</p>
 <p>(<strong>NOTE</strong> that Pybatis therefore needs both 
 <a href="http://jinja.pocoo.org/2/">Jinja2</a> and 
@@ -149,10 +153,10 @@ connection poolers out there, and I felt no need to write one myself.</p>
 a database connection pooler. For instance, in a desktop web application with
 only one connection to the database, no connection pooling is necessary: 
 you create
-your one connection to the database and hand it to the one SQL mapper you
+your one connection to the database and hand it to the one SQL map you
 will use throughout the application.</p>
 <p>In a web application, you may need to figure out a way to hand connections
-from a connection pool to your SQL mapper. Do note, however, that on Apache
+from a connection pool to your SQL map. Do note, however, that on Apache
 using the pre-fork MPM and mod_wsgi, each Apache process contains its own 
 Python 
 interpreter, and, in a framework like Django, its own connection to the 
@@ -173,7 +177,7 @@ file name.)</p>
 
 <h3>Result Handling</h3>
 <h4>Return Data Structures</h4>
-<p>Each SQL mapper's select* methods return a list of dicts. The key names
+<p>Each SQL map's select* methods return a list of dicts. The key names
 for each dict match the column names from the sql statements. As a matter
 of style, it is best to explicitly name your return columns so that
 you know what your keys will be:</p>
@@ -242,7 +246,7 @@ select id as "ID",
 rather just get a dict. Well, you can, with the "ret" argument:</p>
 <pre>
 pet = SQL_MAP.select_commit(
-    ret=pybatis.RETURN_FIRST_ROW,
+    ret=pybatis.RETURN_ONE_ROW,
     inline='''
    select id      as "ID",
           colour  as "COLOUR",
@@ -257,7 +261,7 @@ print "%(NAME)s" % pet
 You can do that too:</p>
 <pre>
 count = SQL_MAP.select_commit(
-    ret=pybatis.RETURN_FIRST_DATUM,
+    ret=pybatis.RETURN_ONE_DATUM,
     inline='''
    select count(*) as "COUNT"
      from pets
@@ -266,6 +270,59 @@ count = SQL_MAP.select_commit(
 # print the pet's NAME
 print "number of pets: %i" % count
 </pre>
+<h4>Massaging Return Results</h4>
+<p>Psycopg returns a list of dicts for all queries not constrained
+to return only one row (in which a lone dict is returned) 
+or one datum (in which a scalar is returned).</p>
+<p>Sometimes, however, you need to return something more complex.
+For instance, what if you needed to return a dict of dicts 
+(instead of the usual list of dicts) using one of the result set's
+columns as the key to the dict of dicts?
+One way to accomplish this looks like so:</p>
+<pre>
+def dict_by_name(results):
+    return_dict = {}
+    for row in results:
+        return_dict[row['NAME']] = row
+    return return_dict
+
+results = SQL_MAP.select_commit(inline='''
+   select name    as "NAME",
+          colour  as "COLOUR"
+     from pets
+''', map=form_values)
+
+colours_by_name = None
+if results != None:
+    colours_by_name = dict_by_name(results)
+</pre>
+<p>Pretty straightforward. However, as an added convenience,
+you can hand the dict_by_name function, above, right into
+select_commit(), where the None check will be done for you
+and dict_by_name will be called with the result set (if the
+result set is not None, of course):</p>
+<pre>
+def dict_by_name(results):
+    return_dict = {}
+    for row in results:
+        return_dict[row['NAME']] = row
+    return return_dict
+
+colours_by_name = SQL_MAP.select_commit(inline='''
+   select name    as "NAME",
+          colour  as "COLOUR"
+     from pets
+''', map=form_values, transformer=dict_by_name)
+</pre>
+<p>Another obvious use of this is transformer functions
+that turn result rows into objects, if you should ever
+need to do such a thing.</p>
+<p>Finally, note that if you feed a transformer to the SQL map
+while asking it to RETURN_ONE_ROW, your transformer should expect
+to recieve one dict as an argument. And, if you feed a transformer
+to the SQL map while asking it to RETURN_ONE_DATUM, your
+transformer function should expect to recieve one scalar as an
+argument.</p>
 
 
 <h3>Input Types</h3>
@@ -351,8 +408,12 @@ required by Psycopg's implementation of DB API:</p>
                               cast(%(SOME_OTHER_FIELD)s as bigint))
     ''', map=form_values, render=False)
 </pre>
-<p>When a stored procedure needs to returns something,
+<p>When a stored procedure needs to return something,
 the select* methods will work as well.</p>
+<p>Note that other implementations of pybatis.SQLMap
+may define a method callproc() to mimic that of the underlying
+DB API, even though this hasn't been done (and is unneccessary)
+for the psycopg2_jinja2 flavour.</p>
 
 <h3>Transactions and Exception Handling</h3>
 <p>So far, we have been using SQL_MAP.select_commit()
@@ -388,7 +449,7 @@ exception handling mechanisms handle that.</p>
     try:
         mt_config.SQL_MAP.begin()
         new_pet_id = mt_config.SQL_MAP.select(
-            ret=pybatis.RETURN_FIRST_DATUM,
+            ret=pybatis.RETURN_ONE_DATUM,
             inline='''
                 select nextval('pet_ids') as "ID"
             ''')
@@ -426,7 +487,7 @@ exception handling mechanisms handle that.</p>
 logs can get too informative too quickly.</p>
 
 XXXXX START HERE; cover the odd but useful combination of debugging
-options for the SQL mapper as well as the per-method-call config
+options for the SQL map as well as the per-method-call config
 options.
 
 TODO:
