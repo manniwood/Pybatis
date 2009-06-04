@@ -80,7 +80,7 @@ class SQLMap(object):
         self.curs = None
 
 
-    def select(self, file=None, inline=None, map={}, transformer=None, ret=pybatis.RETURN_EVERYTHING, render=True, log_debug=False):
+    def select(self, file=None, inline=None, map={}, transformer=None, ret=pybatis.RETURN_EVERYTHING, render=True, log=False):
 
         if file == None and inline == None:
             raise pybatis.FileAndInlineBothNoneException
@@ -104,13 +104,13 @@ class SQLMap(object):
                 template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
-          (self.log_behaviour == pybatis.LOG_PER_CALL and log_debug == True):
+          (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             logging.debug('sql: ' + sql)
             the_time = -1  # an impossible amount of time indicates time not taken
             the_time = time.clock()
         curs.execute(sql, map);
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
-          (self.log_behaviour == pybatis.LOG_PER_CALL and log_debug == True):
+          (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             the_time = time.clock() - the_time
             logging.debug('Just executed')
             logging.debug(curs.query)
@@ -164,7 +164,7 @@ class SQLMap(object):
         return list_of_dicts
 
 
-    def execute(self, file=None, inline=None, map={}, render=True, log_debug=False):
+    def execute(self, file=None, inline=None, map={}, render=True, log=False):
 
         if file == None and inline == None:
             raise pybatis.FileAndInlineBothNoneException
@@ -187,13 +187,13 @@ class SQLMap(object):
                 template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
-          (self.log_behaviour == pybatis.LOG_PER_CALL and log_debug == True):
+          (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             logging.debug('sql: ' + sql)
             the_time = -1  # an impossible amount of time indicates time not taken
             the_time = time.clock()
         curs.execute(sql, map);
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
-          (self.log_behaviour == pybatis.LOG_PER_CALL and log_debug == True):
+          (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             the_time = time.clock() - the_time
             logging.debug('Just executed')
             logging.debug(curs.query)

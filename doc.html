@@ -73,6 +73,13 @@ results = SQL_MAP.select_commit(inline='''
      from pets
 ''', map=form_values)
 </pre>
+<p>NOTE for Jinja2 users: the not_empty test is introduced
+automatically by Pybatis. The not_empty test returns true if the 
+tested variable
+is not in the context at all (ie, is an instance of 
+Jinja's special Undefined object)
+or is defined but is None, or is defined and not None but is 
+the empty string.</p>
 <p>At its core, all Pybatis does is bring templates to bear on
 the problem, to make your code easier to maintain.</p>
 <p>Of course,
@@ -479,94 +486,149 @@ exception handling mechanisms handle that.</p>
         raise
     finally:
         mt_config.SQL_MAP.end()  # IMPORTANT!!! Does final cleanup tasks
-<pre>
+</pre>
 
 
 <h3>Debugging</h3>
-<p>In applications that make a lot of database calls, debugging
-logs can get too informative too quickly.</p>
+<p>NOTE: Debugging depends on
+the logging module, which comes standard with Python.</p>
+<p>Debugging is configured on a per SQL map basis, and then,
+at your option, on a per-call basis.</p>
+<p>To have a SQL map log everything that it usally logs, do the following:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis', \
+    log_behaviour=pybatis.LOG_EVERYTHING)
+</pre>
+<p>Now SQL_MAP's calls to logging.debug(), and all higher logging levels,
+will go to wherever you configure logging to put log messages (usually
+standard out by default, but check the docs for the logging module).</p>
+<p>This is a good time to point out that the default setting of any
+SQL map is to log nothing. (A nice production setting.)</p>
+<p>Sometimes, however, you want to only log the results of a particular
+query that you are trying to debug. Here's the best way to do that
+using LOG_PER_CALL:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis', \
+    log_behaviour=pybatis.LOG_PER_CALL)
+results = SQL_MAP.select_commit(file='select_pets.sql', \
+    map=form_values, log=True)  # this will log to logging
+results = SQL_MAP.select_commit(file='select_pets.sql', 
+    map=form_values, log=False)  # this will not
+results = SQL_MAP.select_commit(file='select_pets.sql', \
+    map=form_values)  # this will not
+</pre>
 
-XXXXX START HERE; cover the odd but useful combination of debugging
-options for the SQL map as well as the per-method-call config
-options.
+<h3>Tips and Tricks</h3>
+<p>Let's say you need to build up a where clause conditionally
+like so:</p>
+<pre>
+   select id      as "ID",
+          colour  as "COLOUR",
+          name    as "NAME"
+     from pets
+    where
+  {% if ID is not_empty %}
+          id = cast(%(ID)s as bigint)
+  {% endif %}
+  {% if COLOUR is not_empty %}
+          and colour = %(COLOR)s
+  {% endif %}
+  {% if NAME is not_empty %}
+          and name = %(NAME)s
+  {% endif %}
+</pre>
+<p>The above code has problems, because if COLOUR is present,
+but ID is not, you end up with</p>
+<pre>
+    where
+          and colour = %(COLOR)s
+</pre>
+<p>which is incorrect SQL. The easiest solution is this:</p>
+<pre>
+    where
+          1 = 1
+  {% if ID is not_empty %}
+          and id = cast(%(ID)s as bigint)
+  {% endif %}
+  {% if COLOUR is not_empty %}
+          and colour = %(COLOR)s
+  {% endif %}
+  {% if NAME is not_empty %}
+          and name = %(NAME)s
+  {% endif %}
+</pre>
+<p>That way, if nothing is defined, you get</p>
+<pre>
+    where
+          1 = 1
+</pre>
+<p>which evaluates the same as not having the where clause
+at all. But you can also have any combination of the expected
+parameters defined and also get correct SQL. For instance,
+if ID and COLOUR are defined and NAME is not, you get:</p>
+<pre>
+    where
+          1 = 1
+          and id = cast(%(ID)s as bigint)
+          and colour = %(COLOR)s
+</pre>
+<p>which works very well.</p>
 
-TODO:
-tips and tricks, like "where 1 = 1"
-</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h2>Origins/Philosophy</h2>
-<p>Pybatis is based on , 
-a SQL mapping library that I used
-on many Java projects.</p>
-<p>When I switched from Java to Python, I wanted to bring iBATIS with me.
-There was no Python version, so I decided to write one myself. Pybatis
-retains what I consider to be the soul of iBATIS, though I have stripped
-it down to only what I think are iBATIS' essentials. I have also traded 
-iBATIS' xml template language for the 
-<a href="http://jinja.pocoo.org/2/">Jinja2</a> templating</p> system.
-Familiarity with Jinja2 is therefore a must to use Pybatis
-to its full potential.</p>
 <h2>Philosophy</h2>
 <p>This section can safely be skipped, unless you are
 curious as to what it is I like about the iBATIS way of
-thinking, and what motivated by port/design of Pybatis.</p>
+thinking, and what motivated my design of Pybatis.</p>
 <h3>ORM is the Vietnam of Computer Science</h3>
 <p>Ted Neward's now-famous 
 <a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
 blog entry likening object relational mapping to the Vietnam of computer science</a>
-is a must read if you want to know why libraries like iBATIS and
-Pybatis exist. Pybatis is the answer to the gripe "There must
-be a better way." There is!</p>
-<h3>Writing SQL is Fun</h3>
-<p>Pybatis expects you to <em>want</em> to write
-your own SQL. Coders want to write code. SQL is code. Developers
-who do not want to write SQL make about as much sense as
-developers who don't want to write C or Java or Python or
-whatever application language they are using.</p>
-<h3>Portable SQL is Highly Overrated</h3>
-<p>I am strongly biased towards leveraging the strengths
-of any SQL implementation. Not only does Pybatis refuse
-to abstract away your database under a gooey layer of ORM,
-it lets you directly leverage your database's unique
-feature set. There <em>is</em> a reason why
-you chose your database over another, isn't there? Then
-take advantage of it!</p>
+is a must read if you want to understand why non-ORM
+approaches to database access have such appeal.</p>
+<h3>Writing SQL is Fun&mdash;and Performant and Correct</h3>
+<p>ORMs are irritating to the sub-set of developers
+who actually want to write SQL by hand. For database-centric
+applications, exposing the database, and controlling the SQL
+queries that go to the database, is the better approach.
+Hiding the database behind an ORM is the wrong approach.
+Also, hand writing SQL for performance and correctness
+is generally a good idea of a database is the core of
+your application.</p>
+<h3>Portable SQL is (Sometimes) Highly Overrated</h3>
+<p>For database-centric applications, abstracting
+away the database behind an ORM in the name of portability
+can be the wrong approach. Some database-centric applications
+need the specific feature sets of the databases they use,
+and these features need to be exposed and made easier to
+use, rather than hidden and made impossible to use in 
+an attempt to maintain portability.</p>
 <h3>Dynamic SQL is Not a Compilation Problem; it is a Templating Problem</h3>
-<p>Pybatis allows you to dynamically generate SQL,
-essentially enhancing SQL with if/else and looping
-constructs. This is similar to other templating
-problems, such as generating html or CSS on the fly.
-It is decidedly NOT code generation as ORMs do it. Pybatis
-uses the Jinja templating engine to dynamically generate SQL,
-abandoning iBATIS' unfortunate use of xml to accomplish the
-same task.</p>
+<p>ORMs generate SQL somewhat the way a C compiler might
+generate machine code: the C programmer does not write machine
+code; the compiler does. Pybatis generates SQL the way
+a templating system might generate HTML: the HTML coder writes
+HTML the whole time, using a template engine to enhance the
+HTML generation. The compiler method
+does not let you write SQL directly; the templating method does.
+The template method of generating SQL is generally the best way
+to go when you need to control what is going on with your database.</p>
 <h3>Objects Suck</h3>
-<p>You don't have to use Object Relational Mapping if you don't
-use objects! Countless enterprise gurus will tell you to map
-your SQL tables into Java Beans, condemning to you a hell of
-always having to maintain and update a sea of getters and setters
-every time you change your data model.</p>
-<p>Here's an idea: how about mapping
-your SQL result sets (not tables, actual result sets from carefully
-crafted queries) into lists of dicts? That is the default behaviour
-of Pybatis. Objects are bad. Data structures are good. (And yes,
-I realise data structures are implemented as objects in most modern
-languages, but hashes and lists pre-date OOP, if you take my point.)</p>
-
-
-
+<p>Object relational mapping is only required if your
+application uses objects. Lighter-weight software designs
+that only use lists and maps (dicts in Python) don't need
+ORM: they just need their database to accept maps and return
+lists of maps. Avoiding objects prevents a world of hurt.</p>
 </body>
 </html>
 
