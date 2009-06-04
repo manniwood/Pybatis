@@ -1,6 +1,10 @@
 
 ####################### definitions #########################
 
+PYTHON := python
+VERSION := $(shell $(PYTHON) ./get_version.py)
+DISTDIR := ./pybatis-$(VERSION)
+DISTTGZ := $(DISTDIR).tar.gz
 FIND := find
 RM := rm -rf
 MKDIR := mkdir -p
@@ -10,13 +14,27 @@ M4 := m4
 
 .PHONY: clean
 clean:
-	find . -name '*.pyc' -exec rm -f {} \;
-	find . -name '*.pyo' -exec rm -f {} \;
+	$(RM) $(DISTDIR)
+	$(FIND) . -name '*.pyc' -exec rm -f {} \;
+	$(FIND) . -name '*.pyo' -exec rm -f {} \;
 
 .PHONY: xxx
 xxx:
-	find . -name '*.py' -exec grep -l XXX {} \;
-	find . -name '*.html' -exec grep -l XXX {} \;
-	find . -name '*.pgsql' -exec grep -l XXX {} \;
-	find . -name '*.css' -exec grep -l XXX {} \;
+	$(FIND) . -name '*.py' -exec grep -l XXX {} \;
+	$(FIND) . -name '*.html' -exec grep -l XXX {} \;
+	$(FIND) . -name '*.pgsql' -exec grep -l XXX {} \;
+	$(FIND) . -name '*.css' -exec grep -l XXX {} \;
+
+
+.PHONY: release
+release:
+	$(MKDIR) $(DISTDIR)
+	cp ./ACKNOWLEDGEMENTS $(DISTDIR)
+	cp ./COPYING $(DISTDIR)
+	cp ./COPYING.LESSER $(DISTDIR)
+	cp ./doc.html $(DISTDIR)
+	cp ./INSTALL $(DISTDIR)
+	cp -r ./pybatis $(DISTDIR)
+	cp ./README $(DISTDIR)
+	tar -cvzf $(DISTTGZ) $(DISTDIR)
 
