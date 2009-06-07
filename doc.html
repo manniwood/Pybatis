@@ -41,8 +41,8 @@ curs = conn.cursor()
 sql = '''
    select id as "ID",
 '''
-show_colour = form_values.get("SHOW_COLOUR") != None and  == "true":
-if show_colour != None and show_colour == "true":
+show_colour = form_values.get("SHOW_COLOUR") is not None and  == "true":
+if show_colour is not None and show_colour == "true":
     sql += '''
     colour as "COLOUR",
     ''''
@@ -300,7 +300,7 @@ results = SQL_MAP.select_commit(inline='''
 ''', map=form_values)
 
 colours_by_name = None
-if results != None:
+if results is not None:
     colours_by_name = dict_by_name(results)
 </pre>
 <p>Pretty straightforward. However, as an added convenience,
