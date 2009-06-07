@@ -21,7 +21,7 @@ from jinja2.runtime import Undefined
 
 ########### defs
 
-VERSION = '1.0'
+VERSION = '1.2'
 
 RETURN_EVERYTHING = 0
 RETURN_ONE_ROW = 1
