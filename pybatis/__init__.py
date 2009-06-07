@@ -35,11 +35,11 @@ LOG_NOTHING = 2  # log no calls to SQLMap object
 
 # detect dict val not being present
 def is_present(str):
-    return (not isinstance(str, Undefined)) and str != None
+    return (not isinstance(str, Undefined)) and str is not None
 
 # detect dict val not being present or being present but empty string
 def is_not_empty(str):
-    return (not isinstance(str, Undefined)) and str != None and str != ''
+    return (not isinstance(str, Undefined)) and str is not None and str != ''
 
 ########## custom exceptions
 

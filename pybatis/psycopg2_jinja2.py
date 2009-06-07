@@ -50,16 +50,16 @@ class SQLMap(object):
 
     def begin(self, isolation_level=None):
         conn = self.conn
-        if conn == None:
+        if conn is None:
             raise pybatis.NullConnectionExcepton
 
         if conn.closed == True:
             raise pybatis.ConnectionClosedException
 
-        if self.curs != None:
+        if self.curs is not None:
             raise pybatis.CursorAlreadyExistsException
 
-        if isolation_level == None:
+        if isolation_level is None:
             self.isolation_level = self.default_isolation_level
         else:
             self.isolation_level = isolation_level
@@ -82,13 +82,13 @@ class SQLMap(object):
 
     def select(self, file=None, inline=None, map={}, transformer=None, ret=pybatis.RETURN_EVERYTHING, render=True, log=False):
 
-        if file == None and inline == None:
+        if file is None and inline is None:
             raise pybatis.FileAndInlineBothNoneException
 
         curs = self.curs
         sql = ''
 
-        if file != None:
+        if file is not None:
             if render == False:
                 # As a performance enhancement, do not render template; just load file directly
                 # from filesystem, borrowing our jinja environment's loader to do so
@@ -118,7 +118,7 @@ class SQLMap(object):
         if curs.rowcount < 1:
             return None
         else:
-            if transformer == None:
+            if transformer is None:
                 if ret == pybatis.RETURN_EVERYTHING:
                     return curs.fetchall()
                 elif ret == pybatis.RETURN_ONE_ROW:
@@ -166,12 +166,12 @@ class SQLMap(object):
 
     def execute(self, file=None, inline=None, map={}, render=True, log=False):
 
-        if file == None and inline == None:
+        if file is None and inline is None:
             raise pybatis.FileAndInlineBothNoneException
 
         curs = self.curs
         sql = ''
-        if file != None:
+        if file is not None:
             if render == False:
                 # As a performance enhancement, do not render template; just load file directly
                 # from filesystem, borrowing our jinja environment's loader to do so
