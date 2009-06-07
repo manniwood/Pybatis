@@ -15,6 +15,7 @@ M4 := m4
 .PHONY: clean
 clean:
 	$(RM) $(DISTDIR)
+	$(RM) $(DISTTGZ)
 	$(FIND) . -name '*.pyc' -exec rm -f {} \;
 	$(FIND) . -name '*.pyo' -exec rm -f {} \;
 
