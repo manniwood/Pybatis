@@ -21,11 +21,12 @@ from jinja2.runtime import Undefined
 
 ########### defs
 
-VERSION = '1.3'
+VERSION = '1.4'
 
 RETURN_EVERYTHING = 0
 RETURN_ONE_ROW = 1
 RETURN_ONE_DATUM = 2
+RETURN_ONE_COLUMN = 3
 
 LOG_EVERYTHING = 0  # log all calls to SQLMap object
 LOG_PER_CALL = 1  # log based on per-call config of SQLMap object

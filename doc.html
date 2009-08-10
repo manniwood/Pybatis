@@ -7,6 +7,8 @@
 Clinton Begin's original idea in 
 <a href="http://ibatis.apache.org">iBATIS</a>.</p>
 
+<h2><a href="pybatis-1.4.tar.gz">Download Pybatis 1.4</a></h2>
+
 <h1>Pybatis</h1>
 
 <h2>Overview</h2>
@@ -27,11 +29,11 @@ Pybatis is named, with great respect.</p>
 <h2>First Example</h2>
 <p>Let's dive in with a code example. Say you want to select two columns, ID
 and NAME, from a table in your database, but 
-sometimes you'd optionally like to show a third column, COLOUR, too.</p>
+sometimes you'd optionally like to show a third column, COLOR, too.</p>
 <p>Let's also say your Python code has gathered
 user input in a dict called form_values, and that if
- form_values["SHOW_COLOUR"] contains the string "true", you'll show
-the COLOUR column in your SQL select results.</p>
+ form_values["SHOW_COLOR"] contains the string "true", you'll show
+the COLOR column in your SQL select results.</p>
 <p>So that we have a basis of comparison, let's look at
 a regular solution just using DB API:</p>
 <pre>
@@ -41,10 +43,10 @@ curs = conn.cursor()
 sql = '''
    select id as "ID",
 '''
-show_colour = form_values.get("SHOW_COLOUR") is not None and  == "true":
-if show_colour is not None and show_colour == "true":
+show_color = form_values.get("SHOW_COLOR") is not None and  == "true":
+if show_color is not None and show_color == "true":
     sql += '''
-    colour as "COLOUR",
+    color as "COLOR",
     ''''
 sql += '''
      name as "NAME"
@@ -66,8 +68,8 @@ conn = psycopg2.connect('user=theuser dbname=petstoredb')
 SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
 results = SQL_MAP.select_commit(inline='''
    select id      as "ID",
-          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
-          colour  as "COLOUR",
+          {% if SHOW_COLOR is not_empty and SHOW_COLOR == 'true' %}
+          color  as "COLOR",
           {% endif %}
           name    as "NAME"
      from pets
@@ -94,8 +96,8 @@ code in its own file? Yes, of course:</p>
 contents:</p>
 <pre>
    select id      as "ID",
-          {% if SHOW_COLOUR is not_empty and SHOW_COLOR == 'true' %}
-          colour  as "COLOUR",
+          {% if SHOW_COLOR is not_empty and SHOW_COLOR == 'true' %}
+          color  as "COLOR",
           {% endif %}
           name    as "NAME"
      from pets
@@ -191,7 +193,7 @@ you know what your keys will be:</p>
 <pre>
 results = SQL_MAP.select_commit(inline='''
    select id      as "ID",
-          colour  as "COLOUR",
+          color  as "COLOR",
           name    as "NAME"
      from pets
  order by "ID"
@@ -212,7 +214,7 @@ if our pets table is defined as</p>
 <pre>
 create table pets (
     id bigint constraint "Pet ID must be unique." primary key not null,
-    colour varchar(50) not null,
+    color varchar(50) not null,
     name varchar(50) constraint "Pet name must be unique." unique not null
 );
 </pre>
@@ -244,7 +246,7 @@ a list of dicts.</p>
 <p>For instance, let's say this only returns one row:</p>
 <pre>
 select id as "ID",
-       colour as "COLOUR",
+       color as "COLOR",
        name as "NAME"
   from pets
  where id = cast(%(ID)s as bigint)
@@ -256,7 +258,7 @@ pet = SQL_MAP.select_commit(
     ret=pybatis.RETURN_ONE_ROW,
     inline='''
    select id      as "ID",
-          colour  as "COLOUR",
+          color  as "COLOR",
           name    as "NAME"
      from pets
  where id = cast(%(ID)s as bigint)
@@ -264,6 +266,41 @@ pet = SQL_MAP.select_commit(
 # print the pet's NAME
 print "%(NAME)s" % pet
 </pre>
+
+<p>Sometimes you want to return just one column as a simple list
+of scalars, with no column heading.  You can do that:</p>
+<pre>
+pet_colors = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_COLUMN,
+    inline='''
+   select distinct color as "COLOR"
+              from pets
+          order by "COLOR"
+''')
+# print alphabetical list of colors of all pets
+for color in pet_colors:
+    print "%s" % color
+</pre>
+
+
+<p>Other times you want to return just one column as a simple list
+of scalars, with no column heading, but you need to specify which
+column to return.  You can do that:</p>
+<pre>
+months = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_COLUMN, col='NAME',
+    inline='''
+   select nbr as "NBR",
+          name as "NAME"
+     from months
+          order by "NBR"
+''')
+# print months in display order, not alphabetical order
+for month in months:
+    print "%s" % month
+</pre>
+
+
 <p>And, of course, sometimes you want to return just one scalar.
 You can do that too:</p>
 <pre>
@@ -277,6 +314,7 @@ count = SQL_MAP.select_commit(
 # print the pet's NAME
 print "number of pets: %i" % count
 </pre>
+
 <h4>Massaging Return Results</h4>
 <p>Psycopg returns a list of dicts for all queries not constrained
 to return only one row (in which a lone dict is returned) 
@@ -295,13 +333,13 @@ def dict_by_name(results):
 
 results = SQL_MAP.select_commit(inline='''
    select name    as "NAME",
-          colour  as "COLOUR"
+          color  as "COLOR"
      from pets
 ''', map=form_values)
 
-colours_by_name = None
+colors_by_name = None
 if results is not None:
-    colours_by_name = dict_by_name(results)
+    colors_by_name = dict_by_name(results)
 </pre>
 <p>Pretty straightforward. However, as an added convenience,
 you can hand the dict_by_name function, above, right into
@@ -315,9 +353,9 @@ def dict_by_name(results):
         return_dict[row['NAME']] = row
     return return_dict
 
-colours_by_name = SQL_MAP.select_commit(inline='''
+colors_by_name = SQL_MAP.select_commit(inline='''
    select name    as "NAME",
-          colour  as "COLOUR"
+          color  as "COLOR"
      from pets
 ''', map=form_values, transformer=dict_by_name)
 </pre>
@@ -380,10 +418,10 @@ methods instead of the SQL map's select* methods.</p>
         SQL_MAP.execute_commit(inline='''
         insert into pets
                     (id,
-                     colour,
+                     color,
                      name)
              values (cast(%(ID)s as bigint),
-                     %(COLOUR)s,
+                     %(COLOR)s,
                      %(NAME)s)
                 ''', map=form_values, render=False)
 </pre>
@@ -391,7 +429,7 @@ methods instead of the SQL map's select* methods.</p>
 <pre>
         SQL_MAP.execute_commit(inline='''
         update pets
-           set colour = %(COLOUR)s
+           set color = %(COLOR)s
          where id = cast(%(ID)s as bigint)
                 ''', map=form_values, render=False)
 
@@ -449,7 +487,7 @@ and let our (unwritten) more general
 exception handling mechanisms handle that.</p>
 <pre>
     # NOTE:
-    # form_values['COLOUR'] and form_values['NAME']
+    # form_values['COLOR'] and form_values['NAME']
     # are assumed to have been error-checked and contain
     # legitimate values.
     error_message = ''
@@ -464,10 +502,10 @@ exception handling mechanisms handle that.</p>
         mt_config.SQL_MAP.execute(inline='''
             insert into pets
                         (id,
-                         colour,
+                         color,
                          name)
                  values (cast(%(ID)s as bigint),
-                         %(COLOUR)s,
+                         %(COLOR)s,
                          %(NAME)s)
         ''', map=form_values)
         mt_config.SQL_MAP.commit()
@@ -535,25 +573,25 @@ results = SQL_MAP.select_commit(file='select_pets.sql', \
 like so:</p>
 <pre>
    select id      as "ID",
-          colour  as "COLOUR",
+          color  as "COLOR",
           name    as "NAME"
      from pets
     where
   {% if ID is not_empty %}
           id = cast(%(ID)s as bigint)
   {% endif %}
-  {% if COLOUR is not_empty %}
-          and colour = %(COLOR)s
+  {% if COLOR is not_empty %}
+          and color = %(COLOR)s
   {% endif %}
   {% if NAME is not_empty %}
           and name = %(NAME)s
   {% endif %}
 </pre>
-<p>The above code has problems, because if COLOUR is present,
+<p>The above code has problems, because if COLOR is present,
 but ID is not, you end up with</p>
 <pre>
     where
-          and colour = %(COLOR)s
+          and color = %(COLOR)s
 </pre>
 <p>which is incorrect SQL. The easiest solution is this:</p>
 <pre>
@@ -562,8 +600,8 @@ but ID is not, you end up with</p>
   {% if ID is not_empty %}
           and id = cast(%(ID)s as bigint)
   {% endif %}
-  {% if COLOUR is not_empty %}
-          and colour = %(COLOR)s
+  {% if COLOR is not_empty %}
+          and color = %(COLOR)s
   {% endif %}
   {% if NAME is not_empty %}
           and name = %(NAME)s
@@ -577,12 +615,12 @@ but ID is not, you end up with</p>
 <p>which evaluates the same as not having the where clause
 at all. But you can also have any combination of the expected
 parameters defined and also get correct SQL. For instance,
-if ID and COLOUR are defined and NAME is not, you get:</p>
+if ID and COLOR are defined and NAME is not, you get:</p>
 <pre>
     where
           1 = 1
           and id = cast(%(ID)s as bigint)
-          and colour = %(COLOR)s
+          and color = %(COLOR)s
 </pre>
 <p>which works very well.</p>
 
@@ -602,8 +640,8 @@ who actually want to write SQL by hand. For database-centric
 applications, exposing the database, and controlling the SQL
 queries that go to the database, is the better approach.
 Hiding the database behind an ORM is the wrong approach.
-Also, hand writing SQL for performance and correctness
-is generally a good idea of a database is the core of
+Also, hand-writing SQL for performance and correctness
+is generally a good idea if a database is the core of
 your application.</p>
 <h3>Portable SQL is (Sometimes) Highly Overrated</h3>
 <p>For database-centric applications, abstracting

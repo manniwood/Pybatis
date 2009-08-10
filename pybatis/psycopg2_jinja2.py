@@ -80,7 +80,7 @@ class SQLMap(object):
         self.curs = None
 
 
-    def select(self, file=None, inline=None, map={}, transformer=None, ret=pybatis.RETURN_EVERYTHING, render=True, log=False):
+    def select(self, file=None, inline=None, map={}, transformer=None, ret=pybatis.RETURN_EVERYTHING, col=None, render=True, log=False):
 
         if file is None and inline is None:
             raise pybatis.FileAndInlineBothNoneException
@@ -117,7 +117,7 @@ class SQLMap(object):
             logging.debug('time: ' + str(the_time))
         if curs.rowcount < 1:
             return None
-        else:
+        else:  # > 0 rows returned, so do something
             if transformer is None:
                 if ret == pybatis.RETURN_EVERYTHING:
                     return curs.fetchall()
@@ -125,6 +125,17 @@ class SQLMap(object):
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     return curs.fetchone()
+                elif ret == pybatis.RETURN_ONE_COLUMN:
+                    all = curs.fetchall()
+                    keys = all[0].keys()
+                    key = ''
+                    if col is None:
+                        if len(keys) > 1:
+                            raise pybatis.MoreThanOneColumnExcepton
+                        key = keys[0]
+                    else:
+                        key = col
+                    return [x[key] for x in all]
                 elif ret == pybatis.RETURN_ONE_DATUM:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
@@ -133,13 +144,25 @@ class SQLMap(object):
                     if len(keys) > 1:
                         raise pybatis.MoreThanOneColumnExcepton
                     return first_row[keys[0]]
-            else:
+            # XXX: I strongly suspect there is a way to get rid of the duplication here
+            else:  # user provided a transformer
                 if ret == pybatis.RETURN_EVERYTHING:
                     return transformer(curs.fetchall())
                 elif ret == pybatis.RETURN_ONE_ROW:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
                     return transformer(curs.fetchone())
+                elif ret == pybatis.RETURN_ONE_COLUMN:
+                    all = curs.fetchall()
+                    keys = all[0].keys()
+                    key = ''
+                    if col is None:
+                        if len(keys) > 1:
+                            raise pybatis.MoreThanOneColumnExcepton
+                        key = keys[0]
+                    else:
+                        key = col
+                    return transformer([x[key] for x in all])
                 elif ret == pybatis.RETURN_ONE_DATUM:
                     if curs.rowcount > 1:
                         raise pybatis.MoreThanOneRowExcepton
