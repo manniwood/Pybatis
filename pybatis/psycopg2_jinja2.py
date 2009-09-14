@@ -88,6 +88,7 @@ class SQLMap(object):
         curs = self.curs
         sql = ''
 
+        # get and render template
         if file is not None:
             if render == False:
                 # As a performance enhancement, do not render template; just load file directly
@@ -103,73 +104,65 @@ class SQLMap(object):
             else:
                 template = self.jinja2env.from_string(inline)
                 sql = template.render(map)
+
+        # log
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
           (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             logging.debug('sql: ' + sql)
             the_time = -1  # an impossible amount of time indicates time not taken
             the_time = time.clock()
+
+        # get from db
         curs.execute(sql, map);
+
+        # log again
         if self.log_behaviour == pybatis.LOG_EVERYTHING or \
           (self.log_behaviour == pybatis.LOG_PER_CALL and log == True):
             the_time = time.clock() - the_time
             logging.debug('Just executed')
             logging.debug(curs.query)
             logging.debug('time: ' + str(the_time))
+
+        # return data
         if curs.rowcount < 1:
             return None
         else:  # > 0 rows returned, so do something
-            if transformer is None:
-                if ret == pybatis.RETURN_EVERYTHING:
+            if ret == pybatis.RETURN_EVERYTHING:
+                if transformer is None:
                     return curs.fetchall()
-                elif ret == pybatis.RETURN_ONE_ROW:
-                    if curs.rowcount > 1:
-                        raise pybatis.MoreThanOneRowExcepton
-                    return curs.fetchone()
-                elif ret == pybatis.RETURN_ONE_COLUMN:
-                    all = curs.fetchall()
-                    keys = all[0].keys()
-                    key = ''
-                    if col is None:
-                        if len(keys) > 1:
-                            raise pybatis.MoreThanOneColumnExcepton
-                        key = keys[0]
-                    else:
-                        key = col
-                    return [x[key] for x in all]
-                elif ret == pybatis.RETURN_ONE_DATUM:
-                    if curs.rowcount > 1:
-                        raise pybatis.MoreThanOneRowExcepton
-                    first_row = curs.fetchone()
-                    keys = first_row.keys()
-                    if len(keys) > 1:
-                        raise pybatis.MoreThanOneColumnExcepton
-                    return first_row[keys[0]]
-            # XXX: I strongly suspect there is a way to get rid of the duplication here
-            else:  # user provided a transformer
-                if ret == pybatis.RETURN_EVERYTHING:
+                else:
                     return transformer(curs.fetchall())
-                elif ret == pybatis.RETURN_ONE_ROW:
-                    if curs.rowcount > 1:
-                        raise pybatis.MoreThanOneRowExcepton
+            elif ret == pybatis.RETURN_ONE_ROW:
+                if curs.rowcount > 1:
+                    raise pybatis.MoreThanOneRowExcepton
+                if transformer is None:
+                    return curs.fetchone()
+                else:
                     return transformer(curs.fetchone())
-                elif ret == pybatis.RETURN_ONE_COLUMN:
-                    all = curs.fetchall()
-                    keys = all[0].keys()
-                    key = ''
-                    if col is None:
-                        if len(keys) > 1:
-                            raise pybatis.MoreThanOneColumnExcepton
-                        key = keys[0]
-                    else:
-                        key = col
-                    return transformer([x[key] for x in all])
-                elif ret == pybatis.RETURN_ONE_DATUM:
-                    if curs.rowcount > 1:
-                        raise pybatis.MoreThanOneRowExcepton
-                    first_row = curs.fetchone()
-                    keys = first_row.keys()
+            elif ret == pybatis.RETURN_ONE_COLUMN:
+                all = curs.fetchall()
+                keys = all[0].keys()
+                key = ''
+                if col is None:
                     if len(keys) > 1:
                         raise pybatis.MoreThanOneColumnExcepton
+                    key = keys[0]
+                else:
+                    key = col
+                if transformer is None:
+                    return [x[key] for x in all]
+                else:
+                    return transformer([x[key] for x in all])
+            elif ret == pybatis.RETURN_ONE_DATUM:
+                if curs.rowcount > 1:
+                    raise pybatis.MoreThanOneRowExcepton
+                first_row = curs.fetchone()
+                keys = first_row.keys()
+                if len(keys) > 1:
+                    raise pybatis.MoreThanOneColumnExcepton
+                if transformer is None:
+                    return first_row[keys[0]]
+                else:
                     return transformer(first_row[keys[0]])
 
 

@@ -629,24 +629,26 @@ if ID and COLOR are defined and NAME is not, you get:</p>
 curious as to what it is I like about the iBATIS way of
 thinking, and what motivated my design of Pybatis.</p>
 <h3>ORM is the Vietnam of Computer Science</h3>
-<p>Ted Neward's now-famous 
+<p>Ted Neward's 
 <a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
 blog entry likening object relational mapping to the Vietnam of computer science</a>
-is a must read if you want to understand why non-ORM
-approaches to database access have such appeal.</p>
-<h3>Writing SQL is Fun&mdash;and Performant and Correct</h3>
-<p>ORMs are irritating to the sub-set of developers
-who actually want to write SQL by hand. For database-centric
+is a must read if you want to understand why products
+like iBATIS (and Pybatis) exist. ORM is generally the most
+popular way of doing web sites, and is used when you need
+to push object modelling down into your database. Pybatis
+can be used if you need to do the opposite: pull your relational
+model up into your business layer. Both architectures have
+their plusses and minuses; Pybatis supports the not-as-well-covered
+alternative to ORM.</p>
+<h3>Writing SQL by Hand Can Enhance Performance and Correctness</h3>
+<p>Some projects require writing SQL by hand. For database-centric
 applications, exposing the database, and controlling the SQL
-queries that go to the database, is the better approach.
-Hiding the database behind an ORM is the wrong approach.
-Also, hand-writing SQL for performance and correctness
-is generally a good idea if a database is the core of
-your application.</p>
-<h3>Portable SQL is (Sometimes) Highly Overrated</h3>
+queries that go to the database, is a desireable approach.
+</p>
+<h3>Portable SQL is Sometimes Not Required</h3>
 <p>For database-centric applications, abstracting
-away the database behind an ORM in the name of portability
-can be the wrong approach. Some database-centric applications
+away the database behind an ORM is sometimes not desireable.
+Some database-centric applications
 need the specific feature sets of the databases they use,
 and these features need to be exposed and made easier to
 use, rather than hidden and made impossible to use in 
@@ -657,16 +659,17 @@ generate machine code: the C programmer does not write machine
 code; the compiler does. Pybatis generates SQL the way
 a templating system might generate HTML: the HTML coder writes
 HTML the whole time, using a template engine to enhance the
-HTML generation. The compiler method
-does not let you write SQL directly; the templating method does.
-The template method of generating SQL is generally the best way
-to go when you need to control what is going on with your database.</p>
-<h3>Objects Are Overrated</h3>
-<p>Object relational mapping is only required if your
-application uses objects. Lighter-weight software designs
-that only use lists and maps (dicts in Python) don't need
-ORM: they just need their database to accept maps and return
-lists of maps. Avoiding objects prevents a world of hurt.</p>
+HTML generation. Both approaches have their plusses and minuses.
+Pybatis supports the second approach.</p>
+<h3>Objects vs. Lists of Maps</h3>
+<p>Object relational mapping is only required when your
+application uses full-fledged objects to shuttle data to and
+from the business layer to the RDBMS. Lighter-weight software designs
+that only need lists and maps (dicts in Python) only need SQL mapping,
+not object mapping. Such light-weight approaches, in a sense, pull
+the relational model up into the business layer, if required. For
+applications where the data model is done in the database, this can
+be a useful approach. Pybatis supports this.</p>
 </body>
 </html>
 
